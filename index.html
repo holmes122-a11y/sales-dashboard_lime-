@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025-2026 銷售業績數據儀表板</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
+        .glass-card { background: white; border: 1px solid #e2e8f0; }
+        .active-tab { background-color: #6366f1; color: white; }
+    </style>
+</head>
+<body class="p-4 md:p-8 relative min-h-screen pb-20">
+
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Controls & Header Panel -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">
+                    銷售業績數據儀表板
+                </h1>
+                <p class="text-slate-500 mt-1">混合分析：年度趨勢 + IP 曲線 + 產品明細</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-4">
+                <!-- Year Select Tabs -->
+                <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button onclick="updateYear('all')" id="btn-all" class="px-5 py-2 rounded-lg text-sm font-bold transition-all active-tab">全部累計</button>
+                    <button onclick="updateYear('2025')" id="btn-2025" class="px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2025 年度</button>
+                    <button onclick="updateYear('2026')" id="btn-2026" class="px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2026 年度</button>
+                </div>
+
+                <!-- Export Buttons Group -->
+                <div class="flex items-center gap-2">
+                    <button onclick="exportToPDF()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-indigo-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        匯出 PDF
+                    </button>
+                    <button onclick="exportToJPG()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-emerald-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a1 1 0 011.414 0L16 17m0 0l1-1m-1 1k-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        匯出 JPG
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Capture Container -->
+        <div id="export-target" class="space-y-8 p-1 rounded-2xl">
+            
+            <!-- Dashboard Subheader -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 id="export-title" class="text-2xl font-bold text-slate-800">銷售業績數據分析總表</h2>
+                    <p class="text-slate-400 text-xs mt-1">數據產生時間：2026/08/10 | 最新校對狀態：7月數據已修正為 NT$ 9,760 (萊姆 $8,310 + 馬子狗 $1,450)</p>
+                </div>
+                <div class="px-4 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold rounded-lg text-sm" id="badge-year">
+                    當前篩選：全部累計
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="glass-card p-6 rounded-2xl shadow-sm border-t-4 border-indigo-500">
+                    <p class="text-slate-500 text-sm font-medium">銷售總額</p>
+                    <h3 id="kpi-revenue" class="text-3xl font-bold text-slate-800 mt-2">NT$ 174,595</h3>
+                    <p id="kpi-revenue-label" class="text-slate-400 text-xs mt-2 italic">累計兩年總和 (每月加總)</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl shadow-sm">
+                    <p class="text-slate-500 text-sm font-medium">銷售數量</p>
+                    <h3 id="kpi-quantity" class="text-3xl font-bold text-slate-800 mt-2">3,190 <span class="text-lg font-normal text-slate-400">張</span></h3>
+                    <p id="kpi-quantity-label" class="text-slate-400 text-xs mt-2">累計列印總張數 (品項加總)</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl shadow-sm">
+                    <p class="text-slate-500 text-sm font-medium">平均單價</p>
+                    <h3 id="kpi-avg" class="text-3xl font-bold text-slate-800 mt-2">NT$ 54.7</h3>
+                    <p class="text-slate-400 text-xs mt-2">單張平均貢獻金額 (總額 / 張數)</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl shadow-sm">
+                    <p class="text-slate-500 text-sm font-medium">主要推動力</p>
+                    <h3 class="text-3xl font-bold text-indigo-600 mt-2">萊姆 (Lime)</h3>
+                    <p id="kpi-brand-perc" class="text-slate-400 text-xs mt-2">佔營收 78.2%</p>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Monthly Trend Chart -->
+                <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-slate-800">銷售趨勢分析 (每月金額加總)</h3>
+                        <div id="chart-legend-custom" class="flex flex-wrap gap-3 text-[10px] font-bold">
+                        </div>
+                    </div>
+                    <div class="h-80">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Brand Pie Chart -->
+                <div class="glass-card p-6 rounded-2xl shadow-sm flex flex-col">
+                    <h3 class="text-lg font-bold text-slate-800 mb-6">品牌營收比例</h3>
+                    <div class="flex-grow flex items-center justify-center">
+                        <div class="w-full h-64">
+                            <canvas id="brandChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="brand-legend" class="mt-6 space-y-2">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Table -->
+            <div class="glass-card p-6 rounded-2xl shadow-sm overflow-hidden">
+                <h3 class="text-lg font-bold text-slate-800 mb-6">重點銷售明細清單 (銷量與金額對校)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-100">
+                                <th class="pb-3 font-medium">產品名稱</th>
+                                <th class="pb-3 font-medium text-center">零售價</th>
+                                <th class="pb-3 font-medium text-center">銷量 (張)</th>
+                                <th class="pb-3 font-medium text-right">銷售總額</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-table-body" class="divide-y divide-slate-50">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div> <!-- Capture Container End -->
+    </div>
+
+    <script>
+        const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+        let currentYear = 'all';
+        
+        const dataStore = {
+            all: {
+                revenue: "174,595", quantity: "3,190", avg: "54.7", revLabel: "累計兩年總和 (每月加總)", topBrandPerc: "78.2%", badge: "當前篩選：全部累計",
+                datasets: [
+                    { label: '2025 總和', data: [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#6366f1', dash: [] },
+                    { label: '2026 總和', data: [18775,62030,7865,21095,18450,10830,9760,0,0,0,0,0], color: '#10b981', dash: [] },
+                    { label: '萊姆 (累計)', data: [11460, 42060, 7765, 17755, 15315, 8075, 8310, 0, 0, 8835, 10575, 6380], color: '#a78bfa', dash: [5, 5] },
+                    { label: '馬子狗 (累計)', data: [7315, 19970, 100, 3340, 3135, 2755, 1450, 0, 0, 0, 0, 0], color: '#34d399', dash: [5, 5] }
+                ],
+                brands: [136530, 38065],
+                table: [
+                    { name: "萊姆 圖框", price: "50", qty: "1,012", total: "50,600" },
+                    { name: "萊姆 貼紙", price: "45", qty: "1,074", total: "48,330" },
+                    { name: "萊姆 A4 特殊紙", price: "80", qty: "440", total: "35,200" },
+                    { name: "馬子狗 A4 特殊紙", price: "80", qty: "258", total: "20,640" },
+                    { name: "馬子狗 圖框", price: "50", qty: "311", total: "15,550" },
+                    { name: "馬子狗 貼紙", price: "45", qty: "95", total: "4,275" }
+                ]
+            },
+            '2025': {
+                revenue: "25,790", quantity: "548", avg: "47.1", revLabel: "2025 年度加總 (10-12月)", topBrandPerc: "100.0%", badge: "當前篩選：2025 年度",
+                datasets: [
+                    { label: '2025 總和', data: [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#6366f1', dash: [] },
+                    { label: '萊姆 2025', data: [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#a78bfa', dash: [5, 5] }
+                ],
+                brands: [25790, 0],
+                table: [
+                    { name: "萊姆 貼紙 (806/807)", price: "45", qty: "322", total: "14,490" },
+                    { name: "萊姆 圖框 (805)", price: "50", qty: "226", total: "11,300" }
+                ]
+            },
+            '2026': {
+                revenue: "148,805", quantity: "2,642", avg: "56.3", revLabel: "2026 年度累計 (1-7月，7月已校對)", topBrandPerc: "74.4%", badge: "當前篩選：2026 年度",
+                datasets: [
+                    { label: '2026 總和', data: [18775,62030,7865,21095,18450,10830,9760,0,0,0,0,0], color: '#10b981', dash: [] },
+                    { label: '萊姆 2026', data: [11460, 42060, 7765, 17755, 15315, 8075, 8310, 0, 0, 0, 0, 0], color: '#a78bfa', dash: [5, 5] },
+                    { label: '馬子狗 2026', data: [7315, 19970, 100, 3340, 3135, 2755, 1450, 0, 0, 0, 0, 0], color: '#34d399', dash: [5, 5] }
+                ],
+                brands: [110740, 38065],
+                table: [
+                    { name: "萊姆 圖框", price: "50", qty: "786", total: "39,300" },
+                    { name: "萊姆 貼紙", price: "45", qty: "752", total: "33,840" },
+                    { name: "萊姆 A4 特殊紙", price: "80", qty: "440", total: "35,200" },
+                    { name: "馬子狗 A4 特殊紙", price: "80", qty: "258", total: "20,640" },
+                    { name: "馬子狗 圖框", price: "50", qty: "311", total: "15,550" },
+                    { name: "馬子狗 貼紙", price: "45", qty: "95", total: "4,275" }
+                ]
+            }
+        };
+
+        let trendChart, brandChart;
+
+        function initCharts() {
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctxTrend, {
+                type: 'line',
+                data: { labels: months, datasets: [] },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 0 },
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            const ctxBrand = document.getElementById('brandChart').getContext('2d');
+            brandChart = new Chart(ctxBrand, {
+                type: 'doughnut',
+                data: { labels: ['萊姆系列', '馬子狗系列'], datasets: [{ data: [], backgroundColor: ['#6366f1', '#10b981'], borderWidth: 0 }] },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 0 },
+                    cutout: '70%', 
+                    plugins: { legend: { display: false } } 
+                }
+            });
+        }
+
+        function updateYear(year) {
+            currentYear = year;
+            const d = dataStore[year];
+            
+            ['all', '2025', '2026'].forEach(y => {
+                const btn = document.getElementById(`btn-${y}`);
+                if (btn) {
+                    btn.classList.remove('active-tab', 'text-slate-500');
+                    if(y === year) btn.classList.add('active-tab'); else btn.classList.add('text-slate-500');
+                }
+            });
+
+            document.getElementById('badge-year').innerText = d.badge;
+            document.getElementById('export-title').innerText = `2025-2026 銷售業績分析總表 (${year === 'all' ? '全部累計' : year + '年度'})`;
+
+            document.getElementById('kpi-revenue').innerText = "NT$ " + d.revenue;
+            document.getElementById('kpi-revenue-label').innerText = d.revLabel;
+            document.getElementById('kpi-quantity').innerHTML = d.quantity + ' <span class="text-lg font-normal text-slate-400">張</span>';
+            document.getElementById('kpi-avg').innerText = "NT$ " + d.avg;
+            document.getElementById('kpi-brand-perc').innerText = "佔營收 " + d.topBrandPerc;
+
+            trendChart.data.datasets = d.datasets.map(ds => ({
+                label: ds.label,
+                data: ds.data,
+                borderColor: ds.color,
+                borderDash: ds.dash,
+                borderWidth: 3,
+                backgroundColor: ds.color + '11',
+                fill: false,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.3
+            }));
+            trendChart.update();
+
+            const customLegend = document.getElementById('chart-legend-custom');
+            customLegend.innerHTML = d.datasets.map(ds => `
+                <div class="flex items-center gap-1.5">
+                    <span class="w-6 h-0.5" style="background-color: ${ds.color}; border-top: 2px ${ds.dash.length > 0 ? 'dashed' : 'solid'} ${ds.color}"></span>
+                    <span class="text-slate-600 text-xs">${ds.label}</span>
+                </div>
+            `).join('');
+
+            brandChart.data.datasets[0].data = d.brands;
+            brandChart.update();
+
+            const legend = document.getElementById('brand-legend');
+            legend.innerHTML = `
+                <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-indigo-500 rounded-full"></span> 萊姆系列</span><span class="font-bold">NT$ ${d.brands[0].toLocaleString()}</span></div>
+                <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-emerald-500 rounded-full"></span> 馬子狗系列</span><span class="font-bold">NT$ ${d.brands[1].toLocaleString()}</span></div>
+            `;
+
+            const tableBody = document.getElementById('product-table-body');
+            tableBody.innerHTML = d.table.map(row => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="py-4 font-medium text-slate-700">${row.name}</td>
+                    <td class="py-4 text-center text-slate-500">${row.price}</td>
+                    <td class="py-4 text-center text-slate-600 font-semibold">${row.qty.toLocaleString()}</td>
+                    <td class="py-4 text-right font-bold text-slate-800">NT$ ${row.total.toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function exportToPDF() {
+            const element = document.getElementById('export-target');
+            const opt = {
+                margin: 10,
+                filename: `sales_dashboard_${currentYear}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, backgroundColor: '#f1f5f9' },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const canvas = await html2canvas(element, opt.html2canvas);
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                
+                const pdf = new jsPDF('l', 'mm', 'a4');
+                const imgWidth = 297; 
+                const pageHeight = 210; 
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                pdf.save(`sales_dashboard_${currentYear}.pdf`);
+            } catch (error) {
+                console.error("PDF 匯出失敗:", error);
+            }
+        }
+
+        async function exportToJPG() {
+            const element = document.getElementById('export-target');
+            try {
+                const canvas = await html2canvas(element, {
+                    scale: 2, 
+                    useCORS: true,
+                    backgroundColor: '#f1f5f9'
+                });
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                const link = document.createElement('a');
+                link.download = `sales_dashboard_${currentYear}.jpg`;
+                link.href = imgData;
+                link.click();
+            } catch (error) {
+                console.error("JPG 匯出失敗:", error);
+            }
+        }
+
+        window.onload = () => {
+            initCharts();
+            updateYear('all');
+        };
+    </script>
+</body>
+</html>
