@@ -124,7 +124,7 @@
                 <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-sm overflow-hidden">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-bold text-slate-800">月度銷售金額與 MoM 增減明細表</h3>
-                        <span class="text-xs text-slate-400">▲ 正成長 / ▼ 負成長</span>
+                        <span class="text-xs text-slate-400"><span class="text-rose-600 font-bold">▲ 正成長</span> / <span class="text-emerald-600 font-bold">▼ 負成長</span></span>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm">
@@ -135,7 +135,7 @@
                                     <th class="pb-3 font-medium text-right">MoM 增減金額</th>
                                     <th class="pb-3 font-medium text-right">MoM 增減率</th>
                                     <th class="pb-3 font-medium text-right">萊姆 (Lime)</th>
-                                    <th class="pb-3 font-medium text-right">馬子狗 (Whippedbro)</th>
+                                    <th class="pb-3 font-medium text-right">馬子狗 (whippedbro)</th>
                                 </tr>
                             </thead>
                             <tbody id="mom-table-body" class="divide-y divide-slate-50">
@@ -207,8 +207,8 @@
                     { m: "2026 08月", total: 14795, diff: 5035, pct: 51.6, lime: 13650, mazi: 1145 }
                 ],
                 insights: `
-                    <p><strong class="text-indigo-600">全期雙峰趨勢：</strong>2025 年第四季開賣即建立基底，2026 年 2 月迎來全期高峰 (NT$ 62,030, MoM +230.4%)。</p>
-                    <p><strong class="text-indigo-600">2026 年 8 月反彈：</strong>8 月單月 MoM 強勢回升 <span class="text-emerald-600 font-bold">+51.6%</span>，營收回升至 $14,795。</p>
+                    <p><strong class="text-indigo-600">全期雙峰趨勢：</strong>2025 年第四季開賣即建立基底，2026 年 2 月迎來全期高峰 (NT$ 62,030, MoM <span class="text-rose-600 font-bold">+230.4%</span>)。</p>
+                    <p><strong class="text-indigo-600">2026 年 8 月反彈：</strong>8 月單月 MoM 強勢回升 <span class="text-rose-600 font-bold">+51.6%</span>，營收回升至 $14,795。</p>
                     <p><strong class="text-indigo-600">品牌貢獻度：</strong>萊姆 (Lime) 佔全期總營收 79.3%，為極度穩健的主力 IP。</p>
                 `,
                 table: [
@@ -233,7 +233,7 @@
                     { m: "12月", total: 6380, diff: -4195, pct: -39.7, lime: 6380, mazi: 0 }
                 ],
                 insights: `
-                    <p><strong class="text-indigo-600">上市開盤表現：</strong>10 月開賣即有 $8,835 表現，11 月達到峰值 $10,575 (MoM +19.7%)。</p>
+                    <p><strong class="text-indigo-600">上市開盤表現：</strong>10 月開賣即有 $8,835 表現，11 月達到峰值 $10,575 (MoM <span class="text-rose-600 font-bold">+19.7%</span>)。</p>
                     <p><strong class="text-indigo-600">年底整理：</strong>12 月受消費檔期轉移影響回落至 $6,380。</p>
                 `,
                 table: [
@@ -260,9 +260,9 @@
                     { m: "8月", total: 14795, diff: 5035, pct: 51.6, lime: 13650, mazi: 1145 }
                 ],
                 insights: `
-                    <p><strong class="text-indigo-600">2月節慶爆發：</strong>受情人節與開學效應帶動，MoM 狂飆 <span class="text-emerald-600 font-bold">+230.4%</span>，創下全年度峰值 ($62,030)。</p>
-                    <p><strong class="text-indigo-600">4月波段反彈：</strong>3 月節慶後冷卻完畢後，4 月強勢反彈 +168.2%。</p>
-                    <p><strong class="text-indigo-600">8月開學強彈：</strong>萊姆貼紙銷量暴增 230 張，帶動 8 月 MoM 大增 <span class="text-emerald-600 font-bold">+51.6%</span>。</p>
+                    <p><strong class="text-indigo-600">2月節慶爆發：</strong>受情人節與開學效應帶動，MoM 狂飆 <span class="text-rose-600 font-bold">+230.4%</span>，創下全年度峰值 ($62,030)。</p>
+                    <p><strong class="text-indigo-600">4月波段反彈：</strong>3 月節慶後冷卻完畢後，4 月強勢反彈 <span class="text-rose-600 font-bold">+168.2%</span>。</p>
+                    <p><strong class="text-indigo-600">8月開學強彈：</strong>萊姆貼紙銷量暴增 230 張，帶動 8 月 MoM 大增 <span class="text-rose-600 font-bold">+51.6%</span>。</p>
                 `,
                 table: [
                     { name: "萊姆 貼紙", price: "45", qty: "1,112", total: "50,040" },
@@ -362,7 +362,7 @@
                 <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-emerald-500 rounded-full"></span> 馬子狗系列</span><span class="font-bold">NT$ ${d.brands[1].toLocaleString()}</span></div>
             `;
 
-            // MoM Table Update
+            // MoM Table Update (紅升綠跌)
             const momTableBody = document.getElementById('mom-table-body');
             momTableBody.innerHTML = d.momRows.map(row => {
                 let diffHtml = '<span class="text-slate-400">—</span>';
@@ -370,11 +370,11 @@
 
                 if (row.diff !== null) {
                     if (row.diff > 0) {
-                        diffHtml = `<span class="text-emerald-600 font-bold">▲ +$${row.diff.toLocaleString()}</span>`;
-                        pctHtml = `<span class="text-emerald-600 font-bold">▲ +${row.pct}%</span>`;
+                        diffHtml = `<span class="text-rose-600 font-bold">▲ +$${row.diff.toLocaleString()}</span>`;
+                        pctHtml = `<span class="text-rose-600 font-bold">▲ +${row.pct}%</span>`;
                     } else if (row.diff < 0) {
-                        diffHtml = `<span class="text-rose-500 font-bold">▼ -$${Math.abs(row.diff).toLocaleString()}</span>`;
-                        pctHtml = `<span class="text-rose-500 font-bold">▼ ${row.pct}%</span>`;
+                        diffHtml = `<span class="text-emerald-600 font-bold">▼ -$${Math.abs(row.diff).toLocaleString()}</span>`;
+                        pctHtml = `<span class="text-emerald-600 font-bold">▼ ${row.pct}%</span>`;
                     } else {
                         diffHtml = `<span class="text-slate-500">$0</span>`;
                         pctHtml = `<span class="text-slate-500">0.0%</span>`;
