@@ -2,11 +2,9 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="robots" content="noindex, nofollow">
-    <!-- 其他原本的 head 內容 -->
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2025-2026 銷售業績數據儀表板</title>
+    <meta name="robots" content="noindex, nofollow">
+    <title>2025-2026 銷售業績數據儀表板 - 8月最新版</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -23,17 +21,15 @@
         .active-tab { background-color: #6366f1; color: white; }
     </style>
 </head>
-<body class="p-4 md:p-8 relative min-h-screen pb-20">
+<body class="p-4 md:p-8">
 
     <div class="max-w-7xl mx-auto">
         
         <!-- Controls & Header Panel -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div>
-                <h1 class="text-3xl font-bold text-slate-800">
-                    銷售業績數據儀表板
-                </h1>
-                <p class="text-slate-500 mt-1">混合分析：年度趨勢 + IP 曲線 + 產品明細</p>
+                <h1 class="text-3xl font-bold text-slate-800">銷售業績數據儀表板</h1>
+                <p class="text-slate-500 mt-1">混合分析：年度趨勢 + IP 曲線 + 產品明細 (數據已更新至 2026 年 8 月)</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-4">
@@ -61,11 +57,10 @@
         <!-- Capture Container -->
         <div id="export-target" class="space-y-8 p-1 rounded-2xl">
             
-            <!-- Dashboard Subheader -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 id="export-title" class="text-2xl font-bold text-slate-800">銷售業績數據分析總表</h2>
-                    <p class="text-slate-400 text-xs mt-1">數據產生時間：2026/08/10 | 最新校對狀態：7月數據已修正為 NT$ 9,760 (萊姆 $8,310 + 馬子狗 $1,450)</p>
+                    <p class="text-slate-400 text-xs mt-1">最新狀態：已更新至 2026 年 8 月</p>
                 </div>
                 <div class="px-4 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold rounded-lg text-sm" id="badge-year">
                     當前篩選：全部累計
@@ -76,32 +71,32 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="glass-card p-6 rounded-2xl shadow-sm border-t-4 border-indigo-500">
                     <p class="text-slate-500 text-sm font-medium">銷售總額</p>
-                    <h3 id="kpi-revenue" class="text-3xl font-bold text-slate-800 mt-2">NT$ 174,595</h3>
-                    <p id="kpi-revenue-label" class="text-slate-400 text-xs mt-2 italic">累計兩年總和 (每月加總)</p>
+                    <h3 id="kpi-revenue" class="text-3xl font-bold text-slate-800 mt-2">NT$ 189,390</h3>
+                    <p id="kpi-revenue-label" class="text-slate-400 text-xs mt-2 italic">累計兩年總和</p>
                 </div>
                 <div class="glass-card p-6 rounded-2xl shadow-sm">
                     <p class="text-slate-500 text-sm font-medium">銷售數量</p>
-                    <h3 id="kpi-quantity" class="text-3xl font-bold text-slate-800 mt-2">3,190 <span class="text-lg font-normal text-slate-400">張</span></h3>
-                    <p id="kpi-quantity-label" class="text-slate-400 text-xs mt-2">累計列印總張數 (品項加總)</p>
+                    <h3 id="kpi-quantity" class="text-3xl font-bold text-slate-800 mt-2">3,553 <span class="text-lg font-normal text-slate-400">張</span></h3>
+                    <p id="kpi-quantity-label" class="text-slate-400 text-xs mt-2">累計列印總張數</p>
                 </div>
                 <div class="glass-card p-6 rounded-2xl shadow-sm">
                     <p class="text-slate-500 text-sm font-medium">平均單價</p>
-                    <h3 id="kpi-avg" class="text-3xl font-bold text-slate-800 mt-2">NT$ 54.7</h3>
-                    <p class="text-slate-400 text-xs mt-2">單張平均貢獻金額 (總額 / 張數)</p>
+                    <h3 id="kpi-avg" class="text-3xl font-bold text-slate-800 mt-2">NT$ 53.3</h3>
+                    <p class="text-slate-400 text-xs mt-2">單張平均貢獻金額</p>
                 </div>
                 <div class="glass-card p-6 rounded-2xl shadow-sm">
                     <p class="text-slate-500 text-sm font-medium">主要推動力</p>
                     <h3 class="text-3xl font-bold text-indigo-600 mt-2">萊姆 (Lime)</h3>
-                    <p id="kpi-brand-perc" class="text-slate-400 text-xs mt-2">佔營收 78.2%</p>
+                    <p id="kpi-brand-perc" class="text-slate-400 text-xs mt-2">佔營收 79.3%</p>
                 </div>
             </div>
 
             <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Monthly Trend Chart -->
+                <!-- Monthly Trend Line Chart -->
                 <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-sm">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-bold text-slate-800">銷售趨勢分析 (每月金額加總)</h3>
+                        <h3 class="text-lg font-bold text-slate-800">銷售趨勢分析 (金額曲線)</h3>
                         <div id="chart-legend-custom" class="flex flex-wrap gap-3 text-[10px] font-bold">
                         </div>
                     </div>
@@ -110,7 +105,7 @@
                     </div>
                 </div>
 
-                <!-- Brand Pie Chart -->
+                <!-- Brand Pie -->
                 <div class="glass-card p-6 rounded-2xl shadow-sm flex flex-col">
                     <h3 class="text-lg font-bold text-slate-800 mb-6">品牌營收比例</h3>
                     <div class="flex-grow flex items-center justify-center">
@@ -125,7 +120,7 @@
 
             <!-- Detailed Table -->
             <div class="glass-card p-6 rounded-2xl shadow-sm overflow-hidden">
-                <h3 class="text-lg font-bold text-slate-800 mb-6">重點銷售明細清單 (銷量與金額對校)</h3>
+                <h3 class="text-lg font-bold text-slate-800 mb-6">重點銷售明細清單</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead>
@@ -142,7 +137,7 @@
                 </div>
             </div>
 
-        </div> <!-- Capture Container End -->
+        </div>
     </div>
 
     <script>
@@ -151,25 +146,25 @@
         
         const dataStore = {
             all: {
-                revenue: "174,595", quantity: "3,190", avg: "54.7", revLabel: "累計兩年總和 (每月加總)", topBrandPerc: "78.2%", badge: "當前篩選：全部累計",
+                revenue: "189,390", quantity: "3,553", avg: "53.3", revLabel: "累計兩年總和", topBrandPerc: "79.3%", badge: "當前篩選：全部累計",
                 datasets: [
                     { label: '2025 總和', data: [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#6366f1', dash: [] },
-                    { label: '2026 總和', data: [18775,62030,7865,21095,18450,10830,9760,0,0,0,0,0], color: '#10b981', dash: [] },
-                    { label: '萊姆 (累計)', data: [11460, 42060, 7765, 17755, 15315, 8075, 8310, 0, 0, 8835, 10575, 6380], color: '#a78bfa', dash: [5, 5] },
-                    { label: '馬子狗 (累計)', data: [7315, 19970, 100, 3340, 3135, 2755, 1450, 0, 0, 0, 0, 0], color: '#34d399', dash: [5, 5] }
+                    { label: '2026 總和', data: [18775,62030,7865,21095,18450,10830,9760,14795,0,0,0,0], color: '#10b981', dash: [] },
+                    { label: '萊姆 (累計)', data: [11460,42060,7765,17755,15315,8075,8310,13650,0,8835,10575,6380], color: '#a78bfa', dash: [5, 5] },
+                    { label: '馬子狗 (累計)', data: [7315,19970,100,3340,3135,2755,1450,1145,0,0,0,0], color: '#34d399', dash: [5, 5] }
                 ],
-                brands: [136530, 38065],
+                brands: [150180, 39210],
                 table: [
-                    { name: "萊姆 圖框", price: "50", qty: "1,012", total: "50,600" },
-                    { name: "萊姆 貼紙", price: "45", qty: "1,074", total: "48,330" },
-                    { name: "萊姆 A4 特殊紙", price: "80", qty: "440", total: "35,200" },
-                    { name: "馬子狗 A4 特殊紙", price: "80", qty: "258", total: "20,640" },
-                    { name: "馬子狗 圖框", price: "50", qty: "311", total: "15,550" },
-                    { name: "馬子狗 貼紙", price: "45", qty: "95", total: "4,275" }
+                    { name: "萊姆 貼紙", price: "45", qty: "1,434", total: "64,530" },
+                    { name: "萊姆 圖框", price: "50", qty: "1,065", total: "53,250" },
+                    { name: "萊姆 A4 特殊紙", price: "80", qty: "405", total: "32,400" },
+                    { name: "馬子狗 A4 特殊紙", price: "80", qty: "243", total: "19,440" },
+                    { name: "馬子狗 圖框", price: "50", qty: "300", total: "15,000" },
+                    { name: "馬子狗 貼紙", price: "45", qty: "106", total: "4,770" }
                 ]
             },
             '2025': {
-                revenue: "25,790", quantity: "548", avg: "47.1", revLabel: "2025 年度加總 (10-12月)", topBrandPerc: "100.0%", badge: "當前篩選：2025 年度",
+                revenue: "25,790", quantity: "548", avg: "47.1", revLabel: "2025 年度數據", topBrandPerc: "100.0%", badge: "當前篩選：2025 年度",
                 datasets: [
                     { label: '2025 總和', data: [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#6366f1', dash: [] },
                     { label: '萊姆 2025', data: [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#a78bfa', dash: [5, 5] }
@@ -181,20 +176,20 @@
                 ]
             },
             '2026': {
-                revenue: "148,805", quantity: "2,642", avg: "56.3", revLabel: "2026 年度累計 (1-7月，7月已校對)", topBrandPerc: "74.4%", badge: "當前篩選：2026 年度",
+                revenue: "163,600", quantity: "3,005", avg: "54.4", revLabel: "2026 年度累計", topBrandPerc: "76.0%", badge: "當前篩選：2026 年度",
                 datasets: [
-                    { label: '2026 總和', data: [18775,62030,7865,21095,18450,10830,9760,0,0,0,0,0], color: '#10b981', dash: [] },
-                    { label: '萊姆 2026', data: [11460, 42060, 7765, 17755, 15315, 8075, 8310, 0, 0, 0, 0, 0], color: '#a78bfa', dash: [5, 5] },
-                    { label: '馬子狗 2026', data: [7315, 19970, 100, 3340, 3135, 2755, 1450, 0, 0, 0, 0, 0], color: '#34d399', dash: [5, 5] }
+                    { label: '2026 總和', data: [18775,62030,7865,21095,18450,10830,9760,14795,0,0,0,0], color: '#10b981', dash: [] },
+                    { label: '萊姆 2026', data: [11460,42060,7765,17755,15315,8075,8310,13650,0,0,0,0], color: '#a78bfa', dash: [5, 5] },
+                    { label: '馬子狗 2026', data: [7315,19970,100,3340,3135,2755,1450,1145,0,0,0,0], color: '#34d399', dash: [5, 5] }
                 ],
-                brands: [110740, 38065],
+                brands: [124390, 39210],
                 table: [
-                    { name: "萊姆 圖框", price: "50", qty: "786", total: "39,300" },
-                    { name: "萊姆 貼紙", price: "45", qty: "752", total: "33,840" },
-                    { name: "萊姆 A4 特殊紙", price: "80", qty: "440", total: "35,200" },
-                    { name: "馬子狗 A4 特殊紙", price: "80", qty: "258", total: "20,640" },
-                    { name: "馬子狗 圖框", price: "50", qty: "311", total: "15,550" },
-                    { name: "馬子狗 貼紙", price: "45", qty: "95", total: "4,275" }
+                    { name: "萊姆 貼紙", price: "45", qty: "1,112", total: "50,040" },
+                    { name: "萊姆 圖框", price: "50", qty: "839", total: "41,950" },
+                    { name: "萊姆 A4 特殊紙", price: "80", qty: "405", total: "32,400" },
+                    { name: "馬子狗 A4 特殊紙", price: "80", qty: "243", total: "19,440" },
+                    { name: "馬子狗 圖框", price: "50", qty: "300", total: "15,000" },
+                    { name: "馬子狗 貼紙", price: "45", qty: "106", total: "4,770" }
                 ]
             }
         };
