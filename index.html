@@ -29,7 +29,7 @@
         <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div>
                 <h1 class="text-3xl font-bold text-slate-800">銷售業績數據儀表板</h1>
-                <p class="text-slate-500 mt-1">混合分析：年度趨勢 + IP 曲線 + 產品明細 (數據已更新至 2026 年 8 月)</p>
+                <p class="text-slate-500 mt-1">混合分析：年度趨勢 + IP 曲線 + MoM 月增率明細 + 產品明細 (數據截至 2026 年 8 月)</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-4">
@@ -118,6 +118,45 @@
                 </div>
             </div>
 
+            <!-- MoM Monthly Breakdown Table & Text Analysis -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- MoM Table -->
+                <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-slate-800">月度銷售金額與 MoM 增減明細表</h3>
+                        <span class="text-xs text-slate-400">▲ 正成長 / ▼ 負成長</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="text-slate-400 border-b border-slate-100">
+                                    <th class="pb-3 font-medium">月份</th>
+                                    <th class="pb-3 font-medium text-right">銷售總額</th>
+                                    <th class="pb-3 font-medium text-right">MoM 增減金額</th>
+                                    <th class="pb-3 font-medium text-right">MoM 增減率</th>
+                                    <th class="pb-3 font-medium text-right">萊姆 (Lime)</th>
+                                    <th class="pb-3 font-medium text-right">馬子狗 (Whippedbro)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mom-table-body" class="divide-y divide-slate-50">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- MoM Text Insights -->
+                <div class="glass-card p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-4">MoM 趨勢洞察說明</h3>
+                        <div id="mom-insights-content" class="space-y-3 text-xs text-slate-600 leading-relaxed">
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 italic">
+                        * MoM (Month-over-Month)：本月對比上月之營收消長率。
+                    </div>
+                </div>
+            </div>
+
             <!-- Detailed Table -->
             <div class="glass-card p-6 rounded-2xl shadow-sm overflow-hidden">
                 <h3 class="text-lg font-bold text-slate-800 mb-6">重點銷售明細清單</h3>
@@ -154,6 +193,24 @@
                     { label: '馬子狗 (累計)', data: [7315,19970,100,3340,3135,2755,1450,1145,0,0,0,0], color: '#34d399', dash: [5, 5] }
                 ],
                 brands: [150180, 39210],
+                momRows: [
+                    { m: "2025 10月", total: 8835, diff: null, pct: null, lime: 8835, mazi: 0 },
+                    { m: "2025 11月", total: 10575, diff: 1740, pct: 19.7, lime: 10575, mazi: 0 },
+                    { m: "2025 12月", total: 6380, diff: -4195, pct: -39.7, lime: 6380, mazi: 0 },
+                    { m: "2026 01月", total: 18775, diff: 12395, pct: 194.3, lime: 11460, mazi: 7315 },
+                    { m: "2026 02月", total: 62030, diff: 43255, pct: 230.4, lime: 42060, mazi: 19970 },
+                    { m: "2026 03月", total: 7865, diff: -54165, pct: -87.3, lime: 7765, mazi: 100 },
+                    { m: "2026 04月", total: 21095, diff: 13230, pct: 168.2, lime: 17755, mazi: 3340 },
+                    { m: "2026 05月", total: 18450, diff: -2645, pct: -12.5, lime: 15315, mazi: 3135 },
+                    { m: "2026 06月", total: 10830, diff: -7620, pct: -41.3, lime: 8075, mazi: 2755 },
+                    { m: "2026 07月", total: 9760, diff: -1070, pct: -9.9, lime: 8310, mazi: 1450 },
+                    { m: "2026 08月", total: 14795, diff: 5035, pct: 51.6, lime: 13650, mazi: 1145 }
+                ],
+                insights: `
+                    <p><strong class="text-indigo-600">全期雙峰趨勢：</strong>2025 年第四季開賣即建立基底，2026 年 2 月迎來全期高峰 (NT$ 62,030, MoM +230.4%)。</p>
+                    <p><strong class="text-indigo-600">2026 年 8 月反彈：</strong>8 月單月 MoM 強勢回升 <span class="text-emerald-600 font-bold">+51.6%</span>，營收回升至 $14,795。</p>
+                    <p><strong class="text-indigo-600">品牌貢獻度：</strong>萊姆 (Lime) 佔全期總營收 79.3%，為極度穩健的主力 IP。</p>
+                `,
                 table: [
                     { name: "萊姆 貼紙", price: "45", qty: "1,434", total: "64,530" },
                     { name: "萊姆 圖框", price: "50", qty: "1,065", total: "53,250" },
@@ -170,6 +227,15 @@
                     { label: '萊姆 2025', data: [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#a78bfa', dash: [5, 5] }
                 ],
                 brands: [25790, 0],
+                momRows: [
+                    { m: "10月", total: 8835, diff: null, pct: null, lime: 8835, mazi: 0 },
+                    { m: "11月", total: 10575, diff: 1740, pct: 19.7, lime: 10575, mazi: 0 },
+                    { m: "12月", total: 6380, diff: -4195, pct: -39.7, lime: 6380, mazi: 0 }
+                ],
+                insights: `
+                    <p><strong class="text-indigo-600">上市開盤表現：</strong>10 月開賣即有 $8,835 表現，11 月達到峰值 $10,575 (MoM +19.7%)。</p>
+                    <p><strong class="text-indigo-600">年底整理：</strong>12 月受消費檔期轉移影響回落至 $6,380。</p>
+                `,
                 table: [
                     { name: "萊姆 貼紙 (806/807)", price: "45", qty: "322", total: "14,490" },
                     { name: "萊姆 圖框 (805)", price: "50", qty: "226", total: "11,300" }
@@ -183,6 +249,21 @@
                     { label: '馬子狗 2026', data: [7315,19970,100,3340,3135,2755,1450,1145,0,0,0,0], color: '#34d399', dash: [5, 5] }
                 ],
                 brands: [124390, 39210],
+                momRows: [
+                    { m: "1月", total: 18775, diff: null, pct: null, lime: 11460, mazi: 7315 },
+                    { m: "2月", total: 62030, diff: 43255, pct: 230.4, lime: 42060, mazi: 19970 },
+                    { m: "3月", total: 7865, diff: -54165, pct: -87.3, lime: 7765, mazi: 100 },
+                    { m: "4月", total: 21095, diff: 13230, pct: 168.2, lime: 17755, mazi: 3340 },
+                    { m: "5月", total: 18450, diff: -2645, pct: -12.5, lime: 15315, mazi: 3135 },
+                    { m: "6月", total: 10830, diff: -7620, pct: -41.3, lime: 8075, mazi: 2755 },
+                    { m: "7月", total: 9760, diff: -1070, pct: -9.9, lime: 8310, mazi: 1450 },
+                    { m: "8月", total: 14795, diff: 5035, pct: 51.6, lime: 13650, mazi: 1145 }
+                ],
+                insights: `
+                    <p><strong class="text-indigo-600">2月節慶爆發：</strong>受情人節與開學效應帶動，MoM 狂飆 <span class="text-emerald-600 font-bold">+230.4%</span>，創下全年度峰值 ($62,030)。</p>
+                    <p><strong class="text-indigo-600">4月波段反彈：</strong>3 月節慶後冷卻完畢後，4 月強勢反彈 +168.2%。</p>
+                    <p><strong class="text-indigo-600">8月開學強彈：</strong>萊姆貼紙銷量暴增 230 張，帶動 8 月 MoM 大增 <span class="text-emerald-600 font-bold">+51.6%</span>。</p>
+                `,
                 table: [
                     { name: "萊姆 貼紙", price: "45", qty: "1,112", total: "50,040" },
                     { name: "萊姆 圖框", price: "50", qty: "839", total: "41,950" },
@@ -248,6 +329,7 @@
             document.getElementById('kpi-avg').innerText = "NT$ " + d.avg;
             document.getElementById('kpi-brand-perc').innerText = "佔營收 " + d.topBrandPerc;
 
+            // Trend Chart Update
             trendChart.data.datasets = d.datasets.map(ds => ({
                 label: ds.label,
                 data: ds.data,
@@ -270,6 +352,7 @@
                 </div>
             `).join('');
 
+            // Brand Pie Chart Update
             brandChart.data.datasets[0].data = d.brands;
             brandChart.update();
 
@@ -279,6 +362,41 @@
                 <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-emerald-500 rounded-full"></span> 馬子狗系列</span><span class="font-bold">NT$ ${d.brands[1].toLocaleString()}</span></div>
             `;
 
+            // MoM Table Update
+            const momTableBody = document.getElementById('mom-table-body');
+            momTableBody.innerHTML = d.momRows.map(row => {
+                let diffHtml = '<span class="text-slate-400">—</span>';
+                let pctHtml = '<span class="text-slate-400">—</span>';
+
+                if (row.diff !== null) {
+                    if (row.diff > 0) {
+                        diffHtml = `<span class="text-emerald-600 font-bold">▲ +$${row.diff.toLocaleString()}</span>`;
+                        pctHtml = `<span class="text-emerald-600 font-bold">▲ +${row.pct}%</span>`;
+                    } else if (row.diff < 0) {
+                        diffHtml = `<span class="text-rose-500 font-bold">▼ -$${Math.abs(row.diff).toLocaleString()}</span>`;
+                        pctHtml = `<span class="text-rose-500 font-bold">▼ ${row.pct}%</span>`;
+                    } else {
+                        diffHtml = `<span class="text-slate-500">$0</span>`;
+                        pctHtml = `<span class="text-slate-500">0.0%</span>`;
+                    }
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3 font-medium text-slate-700">${row.m}</td>
+                        <td class="py-3 text-right font-semibold text-slate-800">NT$ ${row.total.toLocaleString()}</td>
+                        <td class="py-3 text-right">${diffHtml}</td>
+                        <td class="py-3 text-right">${pctHtml}</td>
+                        <td class="py-3 text-right text-indigo-600 font-medium">NT$ ${row.lime.toLocaleString()}</td>
+                        <td class="py-3 text-right text-emerald-600 font-medium">NT$ ${row.mazi.toLocaleString()}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // MoM Insights Update
+            document.getElementById('mom-insights-content').innerHTML = d.insights;
+
+            // Product Table Update
             const tableBody = document.getElementById('product-table-body');
             tableBody.innerHTML = d.table.map(row => `
                 <tr class="hover:bg-slate-50 transition-colors">
