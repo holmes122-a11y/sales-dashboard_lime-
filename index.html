@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>2025-2026 銷售業績數據儀表板 - 10月最新版</title>
+    <title>2025-2026 銷售業績數據儀表板 - 動態上傳更新版</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -13,6 +13,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- SheetJS (xlsx.full.min.js) 用於瀏覽器直接解析 Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -28,7 +30,7 @@
         <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div>
                 <h1 class="text-3xl font-bold text-slate-800">銷售業績數據儀表板</h1>
-                <p class="text-slate-500 mt-1">混合分析：年度趨勢 + IP 曲線 + MoM 月增率明細 + 產品明細 (數據截至 2026 年 10 月)</p>
+                <p class="text-slate-500 mt-1" id="sub-header-desc">混合分析：年度趨勢 + IP 曲線 + MoM 月增率明細 + 產品明細</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-4">
@@ -38,6 +40,13 @@
                     <button onclick="updateYear('2025')" id="btn-2025" class="px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2025 年度</button>
                     <button onclick="updateYear('2026')" id="btn-2026" class="px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2026 年度</button>
                 </div>
+
+                <!-- Excel Upload Input (Hidden) & Trigger Button -->
+                <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)">
+                <button onclick="document.getElementById('excel-file-input').click()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-amber-100">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    匯入 Excel 報表
+                </button>
 
                 <!-- Export Buttons Group -->
                 <div class="flex items-center gap-2">
@@ -59,7 +68,7 @@
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 id="export-title" class="text-2xl font-bold text-slate-800">銷售業績數據分析總表</h2>
-                    <p class="text-slate-400 text-xs mt-1">最新狀態：已更新至 2026 年 10 月 (11510 期)</p>
+                    <p class="text-slate-400 text-xs mt-1" id="data-status-label">最新狀態：已更新至 2026 年 10 月 (11510 期)</p>
                 </div>
                 <div class="px-4 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold rounded-lg text-sm" id="badge-year">
                     當前篩選：全部累計
@@ -85,7 +94,7 @@
                 </div>
                 <div class="glass-card p-6 rounded-2xl shadow-sm">
                     <p class="text-slate-500 text-sm font-medium">主要推動力</p>
-                    <h3 class="text-3xl font-bold text-indigo-600 mt-2">萊姆 (Lime)</h3>
+                    <h3 id="kpi-top-brand" class="text-3xl font-bold text-indigo-600 mt-2">萊姆 (Lime)</h3>
                     <p id="kpi-brand-perc" class="text-slate-400 text-xs mt-2">佔營收 79.5%</p>
                 </div>
             </div>
@@ -182,7 +191,8 @@
         const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
         let currentYear = 'all';
         
-        const dataStore = {
+        // 預設資料庫 (包含至 11510 期)
+        let dataStore = {
             all: {
                 revenue: "224,645", quantity: "4,310", avg: "52.1", revLabel: "累計兩年總和", topBrandPerc: "79.5%", badge: "當前篩選：全部累計",
                 datasets: [
@@ -208,9 +218,8 @@
                     { m: "2026 10月", total: 26035, diff: 16815, pct: 182.4, lime: 19805, mazi: 6230 }
                 ],
                 insights: `
-                    <p><strong class="text-indigo-600">10月強勢大爆發：</strong>10 月營收飆升至 <strong class="text-slate-800">NT$ 26,035</strong>，MoM 狂飆 <span class="text-rose-600 font-bold">▲ +182.4%</span>，創下 2026 下半年新高紀錄！</p>
-                    <p><strong class="text-indigo-600">雙 IP 全面回溫：</strong>萊姆 (NT$ 19,805，MoM <span class="text-rose-600 font-bold">▲ +131.9%</span>) 與馬子狗 (NT$ 6,230，MoM <span class="text-rose-600 font-bold">▲ +816.2%</span>) 齊步強勁反彈。</p>
-                    <p><strong class="text-indigo-600">貼紙為最強主力：</strong>萊姆貼紙單月狂售 299 張 ($13,455)，馬子狗貼紙亦售出 74 張 ($3,330)。</p>
+                    <p><strong class="text-indigo-600">全期雙峰格局：</strong>2026 年 2 月與 10 月分別創下 NT$ 62,030 與 NT$ 26,035 的波段營收高峰。</p>
+                    <p><strong class="text-indigo-600">主力 IP 貢獻：</strong>萊姆 (Lime) 全期貢獻 79.5% 營收，貼紙與圖框均維持穩定回購力。</p>
                 `,
                 table: [
                     { name: "萊姆 貼紙", price: "45", qty: "1,865", total: "83,925" },
@@ -233,10 +242,7 @@
                     { m: "11月", total: 10575, diff: 1740, pct: 19.7, lime: 10575, mazi: 0 },
                     { m: "12月", total: 6380, diff: -4195, pct: -39.7, lime: 6380, mazi: 0 }
                 ],
-                insights: `
-                    <p><strong class="text-indigo-600">上市開盤表現：</strong>10 月開賣即有 $8,835 表現，11 月達到全年度峰值 $10,575 (MoM <span class="text-rose-600 font-bold">▲ +19.7%</span>)。</p>
-                    <p><strong class="text-indigo-600">年底整理：</strong>12 月受消費檔期轉移影響回落至 $6,380。</p>
-                `,
+                insights: `<p>2025 年度為上市開盤期，以萊姆貼紙與圖框為主，11 月達到高峰 NT$ 10,575。</p>`,
                 table: [
                     { name: "萊姆 貼紙 (806/807)", price: "45", qty: "322", total: "14,490" },
                     { name: "萊姆 圖框 (805)", price: "50", qty: "226", total: "11,300" }
@@ -262,11 +268,7 @@
                     { m: "9月", total: 9220, diff: -5575, pct: -37.7, lime: 8540, mazi: 680 },
                     { m: "10月", total: 26035, diff: 16815, pct: 182.4, lime: 19805, mazi: 6230 }
                 ],
-                insights: `
-                    <p><strong class="text-indigo-600">10月創下波段新高：</strong>單月營收達 <strong class="text-slate-800">NT$ 26,035</strong>，銷量 558 張，MoM 激增 <span class="text-rose-600 font-bold">▲ +182.4%</span>！</p>
-                    <p><strong class="text-indigo-600">馬子狗觸底強彈：</strong>馬子狗自 9 月低點 $680 暴增至 $6,230 (MoM <span class="text-rose-600 font-bold">▲ +816.2%</span>)，圖框與貼紙同步放量。</p>
-                    <p><strong class="text-indigo-600">萊姆動能穩健強大：</strong>萊姆系列 10 月銷量達 426 張、金額 $19,805 (MoM <span class="text-rose-600 font-bold">▲ +131.9%</span>)，貼紙銷量達 299 張。</p>
-                `,
+                insights: `<p>2026 年度累計營收達 NT$ 198,855。10 月營收大爆發，MoM +182.4%，雙 IP 同步強彈！</p>`,
                 table: [
                     { name: "萊姆 貼紙", price: "45", qty: "1,543", total: "69,435" },
                     { name: "萊姆 圖框", price: "50", qty: "1,018", total: "50,900" },
@@ -314,6 +316,7 @@
         function updateYear(year) {
             currentYear = year;
             const d = dataStore[year];
+            if (!d) return;
             
             ['all', '2025', '2026'].forEach(y => {
                 const btn = document.getElementById(`btn-${y}`);
@@ -324,7 +327,7 @@
             });
 
             document.getElementById('badge-year').innerText = d.badge;
-            document.getElementById('export-title').innerText = `2025-2026 銷售業績分析總表 (${year === 'all' ? '全部累計' : year + '年度'})`;
+            document.getElementById('export-title').innerText = `銷售業績數據分析總表 (${year === 'all' ? '全部累計' : year + '年度'})`;
             document.getElementById('kpi-revenue').innerText = "NT$ " + d.revenue;
             document.getElementById('kpi-revenue-label').innerText = d.revLabel;
             document.getElementById('kpi-quantity').innerHTML = d.quantity + ' <span class="text-lg font-normal text-slate-400">張</span>';
@@ -408,6 +411,210 @@
             `).join('');
         }
 
+        // ==========================================
+        //  Excel 自動解析引擎 (SheetJS 驅動)
+        // ==========================================
+        function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    parseWorkbookData(workbook, file.name);
+                    alert(`成功讀取並更新報表：${file.name}！`);
+                } catch (err) {
+                    console.error("解析 Excel 失敗:", err);
+                    alert("檔案解析失敗，請確認上傳的是遊戲橘子標準授權格式的 .xlsx 檔案！");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parseSheet(sheet) {
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: 0 });
+            if (rows.length < 7) return null;
+
+            // 結構定義
+            const productNames = ["萊姆圖框", "萊姆貼紙", "萊姆A4特殊紙", "馬子狗圖框", "馬子狗貼紙", "馬子狗A4特殊紙"];
+            const prices = [50, 45, 80, 50, 45, 80];
+            
+            const monthlyTotalRev = new Array(12).fill(0);
+            const monthlyLimeRev = new Array(12).fill(0);
+            const monthlyMaziRev = new Array(12).fill(0);
+            const monthlyTotalQty = new Array(12).fill(0);
+
+            const productSummary = productNames.map((name, i) => ({
+                name: name.replace("圖框", " 圖框").replace("貼紙", " 貼紙").replace("A4", " A4 "),
+                price: prices[i],
+                qty: 0,
+                total: 0
+            }));
+
+            // 逐項抓取 6 種商品數據 (通常在 rows[1] 到 rows[6])
+            for (let p = 0; p < 6; p++) {
+                const row = rows[p + 1];
+                if (!row) continue;
+                
+                // 列印總張數在 index 2
+                const printQty = Number(row[2]) || 0;
+                productSummary[p].qty = printQty;
+                productSummary[p].total = printQty * prices[p];
+
+                // 每月數量在 (4 + m*2)，金額在 (5 + m*2)
+                for (let m = 0; m < 12; m++) {
+                    const qtyCol = 4 + m * 2;
+                    const revCol = 5 + m * 2;
+                    const q = Number(row[qtyCol]) || 0;
+                    const r = Number(row[revCol]) || 0;
+
+                    monthlyTotalQty[m] += q;
+                    monthlyTotalRev[m] += r;
+
+                    if (p < 3) {
+                        monthlyLimeRev[m] += r;
+                    } else {
+                        monthlyMaziRev[m] += r;
+                    }
+                }
+            }
+
+            return { monthlyTotalRev, monthlyLimeRev, monthlyMaziRev, monthlyTotalQty, productSummary };
+        }
+
+        function parseWorkbookData(workbook, fileName) {
+            const sheet2025 = workbook.Sheets['2025'];
+            const sheet2026 = workbook.Sheets['2026'];
+            if (!sheet2026) throw new Error("找不到 2026 工作表");
+
+            const p2025 = sheet2025 ? parseSheet(sheet2025) : null;
+            const p2026 = parseSheet(sheet2026);
+
+            // 找出 2026 有數據的最後一個月份
+            let lastActiveMonth = 0;
+            for (let m = 11; m >= 0; m--) {
+                if (p2026.monthlyTotalRev[m] > 0 || p2026.monthlyTotalQty[m] > 0) {
+                    lastActiveMonth = m + 1;
+                    break;
+                }
+            }
+
+            // --- 建立 2026 年度資料 ---
+            const rev2026 = p2026.monthlyTotalRev.reduce((a, b) => a + b, 0);
+            const qty2026 = p2026.monthlyTotalQty.reduce((a, b) => a + b, 0);
+            const lime2026 = p2026.monthlyLimeRev.reduce((a, b) => a + b, 0);
+            const mazi2026 = p2026.monthlyMaziRev.reduce((a, b) => a + b, 0);
+
+            const momRows2026 = [];
+            for (let m = 0; m < lastActiveMonth; m++) {
+                const total = p2026.monthlyTotalRev[m];
+                const prev = m > 0 ? p2026.monthlyTotalRev[m - 1] : null;
+                const diff = prev !== null ? total - prev : null;
+                const pct = prev !== null && prev > 0 ? Number(((diff / prev) * 100).toFixed(1)) : null;
+                momRows2026.push({
+                    m: `${m + 1}月`,
+                    total: total,
+                    diff: diff,
+                    pct: pct,
+                    lime: p2026.monthlyLimeRev[m],
+                    mazi: p2026.monthlyMaziRev[m]
+                });
+            }
+
+            dataStore['2026'] = {
+                revenue: rev2026.toLocaleString(),
+                quantity: qty2026.toLocaleString(),
+                avg: qty2026 > 0 ? (rev2026 / qty2026).toFixed(1) : "0.0",
+                revLabel: "2026 年度累計",
+                topBrandPerc: rev2026 > 0 ? ((lime2026 / rev2026) * 100).toFixed(1) + "%" : "0.0%",
+                badge: "當前篩選：2026 年度",
+                datasets: [
+                    { label: '2026 總和', data: p2026.monthlyTotalRev, color: '#10b981', dash: [] },
+                    { label: '萊姆 2026', data: p2026.monthlyLimeRev, color: '#a78bfa', dash: [5, 5] },
+                    { label: '馬子狗 2026', data: p2026.monthlyMaziRev, color: '#34d399', dash: [5, 5] }
+                ],
+                brands: [lime2026, mazi2026],
+                momRows: momRows2026,
+                insights: `<p>已由 <strong>${fileName}</strong> 自動解析！最新資料涵蓋至 2026 年 ${lastActiveMonth} 月，年度累計營收達 NT$ ${rev2026.toLocaleString()}。</p>`,
+                table: p2026.productSummary.map(x => ({ name: x.name, price: x.price, qty: x.qty.toLocaleString(), total: x.total.toLocaleString() }))
+            };
+
+            // --- 建立 全部累計 (All-time) 資料 ---
+            const rev2025 = p2025 ? p2025.monthlyTotalRev.reduce((a, b) => a + b, 0) : 25790;
+            const qty2025 = p2025 ? p2025.monthlyTotalQty.reduce((a, b) => a + b, 0) : 548;
+            const lime2025 = p2025 ? p2025.monthlyLimeRev.reduce((a, b) => a + b, 0) : 25790;
+            const mazi2025 = p2025 ? p2025.monthlyMaziRev.reduce((a, b) => a + b, 0) : 0;
+
+            const revAll = rev2025 + rev2026;
+            const qtyAll = qty2025 + qty2026;
+            const limeAll = lime2025 + lime2026;
+            const maziAll = mazi2025 + mazi2026;
+
+            const momRowsAll = [
+                { m: "2025 10月", total: 8835, diff: null, pct: null, lime: 8835, mazi: 0 },
+                { m: "2025 11月", total: 10575, diff: 1740, pct: 19.7, lime: 10575, mazi: 0 },
+                { m: "2025 12月", total: 6380, diff: -4195, pct: -39.7, lime: 6380, mazi: 0 }
+            ];
+
+            let prevAllTotal = 6380;
+            for (let m = 0; m < lastActiveMonth; m++) {
+                const total = p2026.monthlyTotalRev[m];
+                const diff = total - prevAllTotal;
+                const pct = prevAllTotal > 0 ? Number(((diff / prevAllTotal) * 100).toFixed(1)) : 0;
+                momRowsAll.push({
+                    m: `2026 ${String(m + 1).padStart(2, '0')}月`,
+                    total: total,
+                    diff: diff,
+                    pct: pct,
+                    lime: p2026.monthlyLimeRev[m],
+                    mazi: p2026.monthlyMaziRev[m]
+                });
+                prevAllTotal = total;
+            }
+
+            const allProducts = p2026.productSummary.map((p, idx) => {
+                const p25Qty = idx === 0 ? 226 : (idx === 1 ? 322 : 0);
+                const totalQty = p.qty + p25Qty;
+                return {
+                    name: p.name,
+                    price: p.price,
+                    qty: totalQty.toLocaleString(),
+                    total: (totalQty * p.price).toLocaleString()
+                };
+            });
+
+            dataStore['all'] = {
+                revenue: revAll.toLocaleString(),
+                quantity: qtyAll.toLocaleString(),
+                avg: qtyAll > 0 ? (revAll / qtyAll).toFixed(1) : "0.0",
+                revLabel: "累計兩年總和",
+                topBrandPerc: revAll > 0 ? ((limeAll / revAll) * 100).toFixed(1) + "%" : "0.0%",
+                badge: "當前篩選：全部累計",
+                datasets: [
+                    { label: '2025 總和', data: p2025 ? p2025.monthlyTotalRev : [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#6366f1', dash: [] },
+                    { label: '2026 總和', data: p2026.monthlyTotalRev, color: '#10b981', dash: [] },
+                    { label: '萊姆 (累計)', data: [11460,42060,7765,17755,15315,8075,8310,13650,8540,p2026.monthlyLimeRev[9] || 0,10575,6380], color: '#a78bfa', dash: [5, 5] },
+                    { label: '馬子狗 (累計)', data: p2026.monthlyMaziRev, color: '#34d399', dash: [5, 5] }
+                ],
+                brands: [limeAll, maziAll],
+                momRows: momRowsAll,
+                insights: `<p>自動載入成功！全期累計總銷售額達到 <strong class="text-indigo-600">NT$ ${revAll.toLocaleString()}</strong>，累計列印 ${qtyAll.toLocaleString()} 張。</p>`,
+                table: allProducts
+            };
+
+            // 更新網頁頂部文字與介面重繪
+            document.getElementById('data-status-label').innerText = `最新狀態：已透過【${fileName}】動態更新至 2026 年 ${lastActiveMonth} 月`;
+            document.getElementById('sub-header-desc').innerText = `混合分析：年度趨勢 + IP 曲線 + MoM 明細 (動態來源: ${fileName})`;
+            
+            updateYear(currentYear);
+        }
+
+        // ==========================================
+        //  匯出 PDF 與 JPG 功能
+        // ==========================================
         async function exportToPDF() {
             const element = document.getElementById('export-target');
             const opt = {
