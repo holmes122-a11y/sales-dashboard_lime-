@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>2025-2026 萊姆&馬子狗_IBON 銷售業績數據 </title>
+    <title>2025-2026 多通路銷售業績數據儀表板 (總覽 + IBON + SNAPSHOT)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -13,7 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- SheetJS (xlsx.full.min.js) -->
+    <!-- SheetJS (xlsx.full.min.js) 支援 Excel 與 CSV 解析 -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -21,32 +21,47 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
         .glass-card { background: white; border: 1px solid #e2e8f0; }
         .active-tab { background-color: #6366f1; color: white; }
+        .channel-tab-active { background-color: #1e293b; color: white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
         .month-row-selected { background-color: #ede9fe !important; border-left: 4px solid #6366f1; font-weight: bold; }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
+
+        <!-- Top Channel Navigation Tabs (主頁 + 個別分頁 + 預留擴充槽) -->
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+            <div id="channel-tabs-container" class="flex flex-wrap items-center gap-2">
+                <!-- 由 JS 動態渲染通路頁籤，預留未來無限新增空間 -->
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 px-3">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>多通路架構 v3：支援 IBON 月報表與 SNAPSHOT 總計數量/金額欄位對應匯入</span>
+            </div>
+        </div>
         
         <!-- Controls & Header Panel -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div>
-                <h1 class="text-3xl font-bold text-slate-800">銷售業績數據儀表板</h1>
-                <p class="text-slate-500 mt-1" id="sub-header-desc">混合分析：年度趨勢 + IP 曲線 + MoM 月增率明細 + 點選月份品項下鑽</p>
+                <div class="flex flex-wrap items-center gap-3">
+                    <h1 id="main-dashboard-title" class="text-2xl sm:text-3xl font-bold text-slate-800">銷售業績數據儀表板</h1>
+                    <span id="channel-pill" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">全通路總覽</span>
+                </div>
+                <p class="text-slate-500 text-sm mt-1" id="sub-header-desc">混合分析：各通路加總與對比 + 年度趨勢 + IP 曲線 + MoM 月增率明細</p>
             </div>
             
-            <div class="flex flex-wrap items-center gap-4">
+            <div class="flex flex-wrap items-center gap-3">
                 <!-- Year Select Tabs -->
                 <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                    <button onclick="updateYear('all')" id="btn-all" class="px-5 py-2 rounded-lg text-sm font-bold transition-all active-tab">全部累計</button>
-                    <button onclick="updateYear('2025')" id="btn-2025" class="px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2025 年度</button>
-                    <button onclick="updateYear('2026')" id="btn-2026" class="px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2026 年度</button>
+                    <button onclick="updateYear('all')" id="btn-all" class="px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all active-tab">全部累計</button>
+                    <button onclick="updateYear('2025')" id="btn-2025" class="px-4 sm:px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2025 年度</button>
+                    <button onclick="updateYear('2026')" id="btn-2026" class="px-4 sm:px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2026 年度</button>
                 </div>
 
-                <!-- Excel Upload Input & Button -->
-                <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)">
-                <button onclick="document.getElementById('excel-file-input').click()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-amber-100">
+                <!-- File Upload Input (.xlsx, .xls, .csv) & Trigger Button -->
+                <input type="file" id="data-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
+                <button onclick="triggerFileUpload()" id="btn-upload-data" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-amber-100">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                    匯入 Excel 報表
+                    <span id="upload-btn-text">匯入 Excel / CSV</span>
                 </button>
 
                 <!-- Export Buttons Group -->
@@ -63,13 +78,20 @@
             </div>
         </div>
 
+        <!-- Import Parse Diagnostic Banner -->
+        <div id="import-banner" class="hidden mb-6 bg-emerald-50 border border-emerald-200 text-emerald-900 p-4 rounded-2xl shadow-sm flex items-start justify-between gap-4">
+            <div class="text-xs leading-relaxed" id="import-banner-text"></div>
+            <button onclick="document.getElementById('import-banner').classList.add('hidden')" class="text-emerald-600 hover:text-emerald-800 font-bold text-xs px-2 py-1">關閉</button>
+        </div>
+
         <!-- Capture Container -->
         <div id="export-target" class="space-y-8 p-1 rounded-2xl">
             
+            <!-- Status Header -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 id="export-title" class="text-2xl font-bold text-slate-800">銷售業績數據分析總表</h2>
-                    <p class="text-slate-400 text-xs mt-1" id="data-status-label">最新狀態：已更新至 2026 年 10 月 (11510 期)</p>
+                    <h2 id="export-title" class="text-xl sm:text-2xl font-bold text-slate-800">全通路銷售業績數據分析總表 (全部累計)</h2>
+                    <p class="text-slate-400 text-xs mt-1" id="data-status-label">資料狀態：IBON 已更新至 2026 年 10 月 (11510 期) ｜ SNAPSHOT 待匯入資料</p>
                 </div>
                 <div class="px-4 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold rounded-lg text-sm" id="badge-year">
                     當前篩選：全部累計
@@ -77,14 +99,14 @@
             </div>
 
             <!-- KPI Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="glass-card p-6 rounded-2xl shadow-sm border-t-4 border-indigo-500">
-                    <p class="text-slate-500 text-sm font-medium">銷售總額</p>
+                    <p class="text-slate-500 text-sm font-medium" id="kpi-rev-title">銷售總額</p>
                     <h3 id="kpi-revenue" class="text-3xl font-bold text-slate-800 mt-2">NT$ 224,645</h3>
-                    <p id="kpi-revenue-label" class="text-slate-400 text-xs mt-2 italic">累計兩年總和</p>
+                    <p id="kpi-revenue-label" class="text-slate-400 text-xs mt-2 italic">全通路累計兩年總和</p>
                 </div>
                 <div class="glass-card p-6 rounded-2xl shadow-sm">
-                    <p class="text-slate-500 text-sm font-medium">銷售數量</p>
+                    <p class="text-slate-500 text-sm font-medium" id="kpi-qty-title">銷售數量</p>
                     <h3 id="kpi-quantity" class="text-3xl font-bold text-slate-800 mt-2">4,310 <span class="text-lg font-normal text-slate-400">張</span></h3>
                     <p id="kpi-quantity-label" class="text-slate-400 text-xs mt-2">累計列印總張數</p>
                 </div>
@@ -100,11 +122,39 @@
                 </div>
             </div>
 
+            <!-- Overview Only: Channel Breakdown & Combined Summary Section -->
+            <div id="overview-channel-section" class="glass-card p-6 rounded-2xl shadow-sm border-l-4 border-slate-800">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-2">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">各通路個別數據與全通路加總對照表</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">清楚檢視 IBON 與 SNAPSHOT 各自貢獻度與合併總計（點擊通路列可快速切換至該通路專屬分頁）</p>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">主頁總覽專屬視圖</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-100">
+                                <th class="pb-3 font-medium">通路項目</th>
+                                <th class="pb-3 font-medium">資料狀態</th>
+                                <th class="pb-3 font-medium text-right">萊姆營收</th>
+                                <th class="pb-3 font-medium text-right">馬子狗營收</th>
+                                <th class="pb-3 font-medium text-center">銷售數量 (張)</th>
+                                <th class="pb-3 font-medium text-right">銷售總額 (NT$)</th>
+                                <th class="pb-3 font-medium text-right">通路佔比</th>
+                            </tr>
+                        </thead>
+                        <tbody id="channel-summary-tbody" class="divide-y divide-slate-100">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Monthly Trend Line Chart -->
                 <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-sm">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
                         <div>
                             <h3 class="text-lg font-bold text-slate-800">銷售趨勢分析 (金額曲線)</h3>
                             <span class="text-xs text-slate-400">💡 提示：點擊折線上的月份節點，可直接下鑽該月品項明細</span>
@@ -112,7 +162,7 @@
                         <div id="chart-legend-custom" class="flex flex-wrap gap-3 text-[10px] font-bold">
                         </div>
                     </div>
-                    <div class="h-80">
+                    <div class="h-80 relative w-full">
                         <canvas id="trendChart"></canvas>
                     </div>
                 </div>
@@ -121,7 +171,7 @@
                 <div class="glass-card p-6 rounded-2xl shadow-sm flex flex-col">
                     <h3 class="text-lg font-bold text-slate-800 mb-6">品牌營收比例</h3>
                     <div class="flex-grow flex items-center justify-center">
-                        <div class="w-full h-64">
+                        <div class="w-full h-64 relative">
                             <canvas id="brandChart"></canvas>
                         </div>
                     </div>
@@ -134,7 +184,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- MoM Table -->
                 <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-sm overflow-hidden">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                         <div>
                             <h3 class="text-lg font-bold text-slate-800">月度銷售金額與 MoM 增減明細表</h3>
                             <span class="text-xs text-indigo-600 font-medium">👉 點選任意月份列，下方將即時顯示該月份銷售品項</span>
@@ -150,7 +200,7 @@
                                     <th class="pb-3 font-medium text-right">MoM 增減金額</th>
                                     <th class="pb-3 font-medium text-right">MoM 增減率</th>
                                     <th class="pb-3 font-medium text-right">萊姆 (Lime)</th>
-                                    <th class="pb-3 font-medium text-right">馬子狗 (Mazi)</th>
+                                    <th class="pb-3 font-medium text-right">馬子狗 (Whipped Bro)</th>
                                 </tr>
                             </thead>
                             <tbody id="mom-table-body" class="divide-y divide-slate-50">
@@ -177,10 +227,10 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
                     <div>
                         <div class="flex items-center gap-3">
-                            <h3 class="text-lg font-bold text-slate-800" id="product-table-title">重點銷售明細清單 (全期累計)</h3>
+                            <h3 class="text-lg font-bold text-slate-800" id="product-table-title">重點銷售明細清單 (全部累計)</h3>
                             <span id="selected-month-badge" class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700"></span>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1" id="product-table-desc">顯示各商品總銷售額與銷量排名</p>
+                        <p class="text-xs text-slate-400 mt-1" id="product-table-desc">顯示各商品總銷售額與銷量排名 (點選上方月份可看當月品項)</p>
                     </div>
                     <button onclick="resetMonthFilter()" id="btn-reset-month" class="hidden text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-3 py-1.5 rounded-lg transition-all">
                         重設為全期視圖
@@ -207,275 +257,631 @@
         </div>
     </div>
 
+    <!-- Custom Modal: 匯入通路選擇視窗 (取代原生 confirm) -->
+    <div id="channel-select-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-800">請選擇要匯入的通路分頁</h3>
+            <p class="text-xs text-slate-500 mt-1" id="channel-modal-filename">檔案名稱：</p>
+            <div class="grid grid-cols-2 gap-3 mt-5">
+                <button onclick="confirmTargetChannel('ibon')" class="p-4 rounded-xl border-2 border-indigo-100 hover:border-indigo-500 bg-indigo-50/40 text-left transition-all">
+                    <div class="font-bold text-indigo-700 text-sm">IBON 個別數據</div>
+                    <div class="text-[11px] text-slate-500 mt-1">適用遊戲橘子標準月報表格式</div>
+                </button>
+                <button onclick="confirmTargetChannel('snapshot')" class="p-4 rounded-xl border-2 border-emerald-100 hover:border-emerald-500 bg-emerald-50/40 text-left transition-all">
+                    <div class="font-bold text-emerald-700 text-sm">SNAPSHOT 個別數據</div>
+                    <div class="text-[11px] text-slate-500 mt-1">自動對應「總計數量 / 總計金額」</div>
+                </button>
+            </div>
+            <button onclick="closeChannelModal()" class="mt-4 w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-700">取消匯入</button>
+        </div>
+    </div>
+
+    <!-- Custom Modal: SNAPSHOT 欄位抓取預覽與手動微調確認視窗 -->
+    <div id="snapshot-mapper-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">SNAPSHOT 匯入欄位對應與預覽確認</h3>
+                    <p class="text-xs text-slate-500 mt-0.5" id="mapper-subtitle">請確認系統偵測到的「總計數量」與「總計金額」欄位是否正確，亦可手動下拉調整</p>
+                </div>
+                <button onclick="closeMapperModal()" class="text-slate-400 hover:text-slate-600 font-bold text-sm px-2 py-1">✕</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 my-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">1. 工作表 (Sheet)</label>
+                    <select id="map-sheet" onchange="onMapperSheetChange()" class="w-full text-xs rounded-lg border-slate-300 bg-white p-2 border font-medium"></select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">2. 標題所在列</label>
+                    <select id="map-header-row" onchange="onMapperHeaderRowChange()" class="w-full text-xs rounded-lg border-slate-300 bg-white p-2 border font-medium"></select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">3. 商品/品項欄</label>
+                    <select id="map-name-col" onchange="recalcMapperPreview()" class="w-full text-xs rounded-lg border-slate-300 bg-white p-2 border font-medium"></select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-indigo-700 mb-1">4. 總計數量欄 *</label>
+                    <select id="map-qty-col" onchange="recalcMapperPreview()" class="w-full text-xs rounded-lg border-indigo-300 bg-indigo-50/40 p-2 border font-bold text-indigo-900"></select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-emerald-700 mb-1">5. 總計金額欄 *</label>
+                    <select id="map-rev-col" onchange="recalcMapperPreview()" class="w-full text-xs rounded-lg border-emerald-300 bg-emerald-50/40 p-2 border font-bold text-emerald-900"></select>
+                </div>
+            </div>
+
+            <!-- 試算總計預覽卡 -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3">
+                    <div class="text-[11px] text-indigo-600 font-bold">預覽抓取：總計數量</div>
+                    <div class="text-xl font-bold text-slate-800 mt-0.5" id="preview-snap-qty">0 張</div>
+                </div>
+                <div class="bg-emerald-50/70 border border-emerald-100 rounded-xl p-3">
+                    <div class="text-[11px] text-emerald-600 font-bold">預覽抓取：總計金額</div>
+                    <div class="text-xl font-bold text-slate-800 mt-0.5" id="preview-snap-rev">NT$ 0</div>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                    <div class="text-[11px] text-slate-500 font-bold">歸屬年份 / 月份</div>
+                    <div class="flex gap-1.5 mt-1">
+                        <select id="map-target-year" class="text-xs rounded border border-slate-300 bg-white px-2 py-1 font-bold">
+                            <option value="2026" selected>2026 年</option>
+                            <option value="2025">2025 年</option>
+                        </select>
+                        <select id="map-target-month" class="text-xs rounded border border-slate-300 bg-white px-2 py-1 font-bold">
+                            <option value="0">1 月</option><option value="1">2 月</option><option value="2">3 月</option>
+                            <option value="3">4 月</option><option value="4">5 月</option><option value="5">6 月</option>
+                            <option value="6">7 月</option><option value="7">8 月</option><option value="8">9 月</option>
+                            <option value="9" selected>10 月</option><option value="10">11 月</option><option value="11">12 月</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 原始資料前 12 列預覽表 -->
+            <div class="flex-grow overflow-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left text-xs">
+                    <thead id="mapper-preview-thead" class="bg-slate-100 text-slate-600 sticky top-0"></thead>
+                    <tbody id="mapper-preview-tbody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-4 pt-3 border-t border-slate-100">
+                <button onclick="closeMapperModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">取消</button>
+                <button onclick="commitSnapshotMapping()" class="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
+                    確認並匯入 SNAPSHOT 數據
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+        let currentChannel = 'overview';
         let currentYear = 'all';
-        let selectedMonthKey = null; // 當前選取的月份，如 '2026-10'
+        let selectedMonthKey = null;
 
-        // 預設各商品月度明細資料 (商品名稱對照: 萊姆貼紙, 萊姆圖框, 萊姆A4, 馬子狗A4, 馬子狗圖框, 馬子狗貼紙)
-        const defaultMonthlyDetails = {
-            "2025-10": [
-                { name: "萊姆 貼紙", price: 45, qty: 103, total: 4635 },
-                { name: "萊姆 圖框", price: 50, qty: 84, total: 4200 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 圖框", price: 50, qty: 0, total: 0 },
-                { name: "馬子狗 貼紙", price: 45, qty: 0, total: 0 }
-            ],
-            "2025-11": [
-                { name: "萊姆 貼紙", price: 45, qty: 125, total: 5625 },
-                { name: "萊姆 圖框", price: 50, qty: 99, total: 4950 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 圖框", price: 50, qty: 0, total: 0 },
-                { name: "馬子狗 貼紙", price: 45, qty: 0, total: 0 }
-            ],
-            "2025-12": [
-                { name: "萊姆 貼紙", price: 45, qty: 94, total: 4230 },
-                { name: "萊姆 圖框", price: 50, qty: 43, total: 2150 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 圖框", price: 50, qty: 0, total: 0 },
-                { name: "馬子狗 貼紙", price: 45, qty: 0, total: 0 }
-            ],
-            "2026-01": [
-                { name: "萊姆 貼紙", price: 45, qty: 108, total: 4860 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 53, total: 4240 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 50, total: 4000 },
-                { name: "馬子狗 圖框", price: 50, qty: 57, total: 2850 },
-                { name: "萊姆 圖框", price: 50, qty: 52, total: 2600 },
-                { name: "馬子狗 貼紙", price: 45, qty: 5, total: 225 }
-            ],
-            "2026-02": [
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 348, total: 27840 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 190, total: 15200 },
-                { name: "萊姆 圖框", price: 50, qty: 144, total: 7200 },
-                { name: "萊姆 貼紙", price: 45, qty: 156, total: 7020 },
-                { name: "馬子狗 圖框", price: 50, qty: 90, total: 4500 },
-                { name: "馬子狗 貼紙", price: 45, qty: 6, total: 270 }
-            ],
-            "2026-03": [
-                { name: "萊姆 貼紙", price: 45, qty: 119, total: 5355 },
-                { name: "萊姆 圖框", price: 50, qty: 37, total: 1850 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 7, total: 560 },
-                { name: "馬子狗 圖框", price: 50, qty: 2, total: 100 },
-                { name: "馬子狗 貼紙", price: 45, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
-            ],
-            "2026-04": [
-                { name: "萊姆 圖框", price: 50, qty: 203, total: 10150 },
-                { name: "萊姆 貼紙", price: 45, qty: 169, total: 7605 },
-                { name: "馬子狗 圖框", price: 50, qty: 47, total: 2350 },
-                { name: "馬子狗 貼紙", price: 45, qty: 22, total: 990 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
-            ],
-            "2026-05": [
-                { name: "萊姆 圖框", price: 50, qty: 201, total: 10050 },
-                { name: "萊姆 貼紙", price: 45, qty: 117, total: 5265 },
-                { name: "馬子狗 圖框", price: 50, qty: 42, total: 2100 },
-                { name: "馬子狗 貼紙", price: 45, qty: 23, total: 1035 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
-            ],
-            "2026-06": [
-                { name: "萊姆 貼紙", price: 45, qty: 95, total: 4275 },
-                { name: "萊姆 圖框", price: 50, qty: 76, total: 3800 },
-                { name: "馬子狗 圖框", price: 50, qty: 38, total: 1900 },
-                { name: "馬子狗 貼紙", price: 45, qty: 19, total: 855 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
-            ],
-            "2026-07": [
-                { name: "萊姆 貼紙", price: 45, qty: 118, total: 5310 },
-                { name: "萊姆 圖框", price: 50, qty: 60, total: 3000 },
-                { name: "馬子狗 圖框", price: 50, qty: 20, total: 1000 },
-                { name: "馬子狗 貼紙", price: 45, qty: 10, total: 450 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
-            ],
-            "2026-08": [
-                { name: "萊姆 貼紙", price: 45, qty: 230, total: 10350 },
-                { name: "萊姆 圖框", price: 50, qty: 66, total: 3300 },
-                { name: "馬子狗 貼紙", price: 45, qty: 21, total: 945 },
-                { name: "馬子狗 圖框", price: 50, qty: 4, total: 200 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
-            ],
-            "2026-09": [
-                { name: "萊姆 貼紙", price: 45, qty: 132, total: 5940 },
-                { name: "萊姆 圖框", price: 50, qty: 52, total: 2600 },
-                { name: "馬子狗 貼紙", price: 45, qty: 14, total: 630 },
-                { name: "馬子狗 圖框", price: 50, qty: 1, total: 50 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
-            ],
-            "2026-10": [
-                { name: "萊姆 貼紙", price: 45, qty: 299, total: 13455 },
-                { name: "萊姆 圖框", price: 50, qty: 127, total: 6350 },
-                { name: "馬子狗 貼紙", price: 45, qty: 74, total: 3330 },
-                { name: "馬子狗 圖框", price: 50, qty: 58, total: 2900 },
-                { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
-                { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
-            ]
-        };
+        // ==========================================
+        //  1. 擴充式通路註冊表 (預留未來持續新增通路)
+        // ==========================================
+        const channelRegistry = [
+            { id: 'overview', name: '主頁總覽 (全通路加總)', shortName: '主頁總覽', badgeColor: 'bg-slate-800 text-white' },
+            { id: 'ibon', name: 'IBON 個別數據', shortName: 'IBON', badgeColor: 'bg-indigo-100 text-indigo-700' },
+            { id: 'snapshot', name: 'SNAPSHOT 個別數據', shortName: 'SNAPSHOT', badgeColor: 'bg-emerald-100 text-emerald-700' }
+        ];
 
-        let monthlyDetailsStore = { ...defaultMonthlyDetails };
+        function createEmptyChannelData(channelLabel) {
+            return {
+                statusText: `${channelLabel} 尚未匯入資料（請點擊右上角「匯入 SNAPSHOT 報表」上傳檔案）`,
+                hasData: false,
+                years: {
+                    '2025': {
+                        totalRev: 0, totalQty: 0, limeRev: 0, maziRev: 0,
+                        monthlyTotal: new Array(12).fill(0),
+                        monthlyLime: new Array(12).fill(0),
+                        monthlyMazi: new Array(12).fill(0),
+                        monthlyQty: new Array(12).fill(0),
+                        products: []
+                    },
+                    '2026': {
+                        totalRev: 0, totalQty: 0, limeRev: 0, maziRev: 0,
+                        monthlyTotal: new Array(12).fill(0),
+                        monthlyLime: new Array(12).fill(0),
+                        monthlyMazi: new Array(12).fill(0),
+                        monthlyQty: new Array(12).fill(0),
+                        products: []
+                    }
+                },
+                monthlyDetails: {}
+            };
+        }
 
-        let dataStore = {
-            all: {
-                revenue: "224,645", quantity: "4,310", avg: "52.1", revLabel: "累計兩年總和", topBrandPerc: "79.5%", badge: "當前篩選：全部累計",
-                datasets: [
-                    { label: '2025 總和', data: [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#6366f1', dash: [] },
-                    { label: '2026 總和', data: [18775,62030,7865,21095,18450,10830,9760,14795,9220,26035,0,0], color: '#10b981', dash: [] },
-                    { label: '萊姆 (累計)', data: [11460,42060,7765,17755,15315,8075,8310,13650,8540,19805,10575,6380], color: '#a78bfa', dash: [5, 5] },
-                    { label: '馬子狗 (累計)', data: [7315,19970,100,3340,3135,2755,1450,1145,680,6230,0,0], color: '#34d399', dash: [5, 5] }
-                ],
-                brands: [178525, 46120],
-                momRows: [
-                    { key: "2025-10", m: "2025 10月", total: 8835, diff: null, pct: null, lime: 8835, mazi: 0 },
-                    { key: "2025-11", m: "2025 11月", total: 10575, diff: 1740, pct: 19.7, lime: 10575, mazi: 0 },
-                    { key: "2025-12", m: "2025 12月", total: 6380, diff: -4195, pct: -39.7, lime: 6380, mazi: 0 },
-                    { key: "2026-01", m: "2026 01月", total: 18775, diff: 12395, pct: 194.3, lime: 11460, mazi: 7315 },
-                    { key: "2026-02", m: "2026 02月", total: 62030, diff: 43255, pct: 230.4, lime: 42060, mazi: 19970 },
-                    { key: "2026-03", m: "2026 03月", total: 7865, diff: -54165, pct: -87.3, lime: 7765, mazi: 100 },
-                    { key: "2026-04", m: "2026 04月", total: 21095, diff: 13230, pct: 168.2, lime: 17755, mazi: 3340 },
-                    { key: "2026-05", m: "2026 05月", total: 18450, diff: -2645, pct: -12.5, lime: 15315, mazi: 3135 },
-                    { key: "2026-06", m: "2026 06月", total: 10830, diff: -7620, pct: -41.3, lime: 8075, mazi: 2755 },
-                    { key: "2026-07", m: "2026 07月", total: 9760, diff: -1070, pct: -9.9, lime: 8310, mazi: 1450 },
-                    { key: "2026-08", m: "2026 08月", total: 14795, diff: 5035, pct: 51.6, lime: 13650, mazi: 1145 },
-                    { key: "2026-09", m: "2026 09月", total: 9220, diff: -5575, pct: -37.7, lime: 8540, mazi: 680 },
-                    { key: "2026-10", m: "2026 10月", total: 26035, diff: 16815, pct: 182.4, lime: 19805, mazi: 6230 }
-                ],
-                insights: `
-                    <p><strong class="text-indigo-600">全期雙峰格局：</strong>2026 年 2 月與 10 月分別創下 NT$ 62,030 與 NT$ 26,035 的波段營收高峰。</p>
-                    <p><strong class="text-indigo-600">主力 IP 貢獻：</strong>萊姆 (Lime) 全期貢獻 79.5% 營收，貼紙與圖框維持穩定回購力。</p>
-                `,
-                table: [
-                    { name: "萊姆 貼紙", price: "45", qty: "1,865", total: "83,925" },
-                    { name: "萊姆 圖框", price: "50", qty: "1,244", total: "62,200" },
-                    { name: "萊姆 A4 特殊紙", price: "80", qty: "405", total: "32,400" },
-                    { name: "馬子狗 A4 特殊紙", price: "80", qty: "243", total: "19,440" },
-                    { name: "馬子狗 圖框", price: "50", qty: "359", total: "17,950" },
-                    { name: "馬子狗 貼紙", price: "45", qty: "194", total: "8,730" }
-                ]
+        // ==========================================
+        //  2. 各通路原始數據庫 (IBON 為 11510 精確驗證數據)
+        // ==========================================
+        const channelDatasets = {
+            ibon: {
+                statusText: "已更新至 2026 年 10 月 (11510 期)",
+                hasData: true,
+                years: {
+                    '2025': {
+                        totalRev: 25790, totalQty: 548, limeRev: 25790, maziRev: 0,
+                        monthlyTotal: [0,0,0,0,0,0,0,0,0,8835,10575,6380],
+                        monthlyLime:  [0,0,0,0,0,0,0,0,0,8835,10575,6380],
+                        monthlyMazi:  [0,0,0,0,0,0,0,0,0,0,0,0],
+                        monthlyQty:   [0,0,0,0,0,0,0,0,0,187,224,137],
+                        products: [
+                            { name: "萊姆 貼紙 (806/807)", price: 45, qty: 322, total: 14490 },
+                            { name: "萊姆 圖框 (805)", price: 50, qty: 226, total: 11300 }
+                        ]
+                    },
+                    '2026': {
+                        totalRev: 198855, totalQty: 3762, limeRev: 152735, maziRev: 46120,
+                        monthlyTotal: [18775,62030,7865,21095,18450,10830,9760,14795,9220,26035,0,0],
+                        monthlyLime:  [11460,42060,7765,17755,15315,8075,8310,13650,8540,19805,0,0],
+                        monthlyMazi:  [7315,19970,100,3340,3135,2755,1450,1145,680,6230,0,0],
+                        monthlyQty:   [325,934,165,441,383,228,208,321,199,558,0,0],
+                        products: [
+                            { name: "萊姆 貼紙", price: 45, qty: 1543, total: 69435 },
+                            { name: "萊姆 圖框", price: 50, qty: 1018, total: 50900 },
+                            { name: "萊姆 A4 特殊紙", price: 80, qty: 405, total: 32400 },
+                            { name: "馬子狗 A4 特殊紙", price: 80, qty: 243, total: 19440 },
+                            { name: "馬子狗 圖框", price: 50, qty: 359, total: 17950 },
+                            { name: "馬子狗 貼紙", price: 45, qty: 194, total: 8730 }
+                        ]
+                    }
+                },
+                monthlyDetails: {
+                    "2025-10": [
+                        { name: "萊姆 貼紙", price: 45, qty: 103, total: 4635 },
+                        { name: "萊姆 圖框", price: 50, qty: 84, total: 4200 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 圖框", price: 50, qty: 0, total: 0 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 0, total: 0 }
+                    ],
+                    "2025-11": [
+                        { name: "萊姆 貼紙", price: 45, qty: 125, total: 5625 },
+                        { name: "萊姆 圖框", price: 50, qty: 99, total: 4950 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 圖框", price: 50, qty: 0, total: 0 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 0, total: 0 }
+                    ],
+                    "2025-12": [
+                        { name: "萊姆 貼紙", price: 45, qty: 94, total: 4230 },
+                        { name: "萊姆 圖框", price: 50, qty: 43, total: 2150 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 圖框", price: 50, qty: 0, total: 0 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 0, total: 0 }
+                    ],
+                    "2026-01": [
+                        { name: "萊姆 貼紙", price: 45, qty: 108, total: 4860 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 53, total: 4240 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 50, total: 4000 },
+                        { name: "馬子狗 圖框", price: 50, qty: 57, total: 2850 },
+                        { name: "萊姆 圖框", price: 50, qty: 52, total: 2600 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 5, total: 225 }
+                    ],
+                    "2026-02": [
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 348, total: 27840 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 190, total: 15200 },
+                        { name: "萊姆 圖框", price: 50, qty: 144, total: 7200 },
+                        { name: "萊姆 貼紙", price: 45, qty: 156, total: 7020 },
+                        { name: "馬子狗 圖框", price: 50, qty: 90, total: 4500 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 6, total: 270 }
+                    ],
+                    "2026-03": [
+                        { name: "萊姆 貼紙", price: 45, qty: 119, total: 5355 },
+                        { name: "萊姆 圖框", price: 50, qty: 37, total: 1850 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 7, total: 560 },
+                        { name: "馬子狗 圖框", price: 50, qty: 2, total: 100 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
+                    ],
+                    "2026-04": [
+                        { name: "萊姆 圖框", price: 50, qty: 203, total: 10150 },
+                        { name: "萊姆 貼紙", price: 45, qty: 169, total: 7605 },
+                        { name: "馬子狗 圖框", price: 50, qty: 47, total: 2350 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 22, total: 990 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
+                    ],
+                    "2026-05": [
+                        { name: "萊姆 圖框", price: 50, qty: 201, total: 10050 },
+                        { name: "萊姆 貼紙", price: 45, qty: 117, total: 5265 },
+                        { name: "馬子狗 圖框", price: 50, qty: 42, total: 2100 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 23, total: 1035 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
+                    ],
+                    "2026-06": [
+                        { name: "萊姆 貼紙", price: 45, qty: 95, total: 4275 },
+                        { name: "萊姆 圖框", price: 50, qty: 76, total: 3800 },
+                        { name: "馬子狗 圖框", price: 50, qty: 38, total: 1900 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 19, total: 855 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
+                    ],
+                    "2026-07": [
+                        { name: "萊姆 貼紙", price: 45, qty: 118, total: 5310 },
+                        { name: "萊姆 圖框", price: 50, qty: 60, total: 3000 },
+                        { name: "馬子狗 圖框", price: 50, qty: 20, total: 1000 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 10, total: 450 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
+                    ],
+                    "2026-08": [
+                        { name: "萊姆 貼紙", price: 45, qty: 230, total: 10350 },
+                        { name: "萊姆 圖框", price: 50, qty: 66, total: 3300 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 21, total: 945 },
+                        { name: "馬子狗 圖框", price: 50, qty: 4, total: 200 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
+                    ],
+                    "2026-09": [
+                        { name: "萊姆 貼紙", price: 45, qty: 132, total: 5940 },
+                        { name: "萊姆 圖框", price: 50, qty: 52, total: 2600 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 14, total: 630 },
+                        { name: "馬子狗 圖框", price: 50, qty: 1, total: 50 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
+                    ],
+                    "2026-10": [
+                        { name: "萊姆 貼紙", price: 45, qty: 299, total: 13455 },
+                        { name: "萊姆 圖框", price: 50, qty: 127, total: 6350 },
+                        { name: "馬子狗 貼紙", price: 45, qty: 74, total: 3330 },
+                        { name: "馬子狗 圖框", price: 50, qty: 58, total: 2900 },
+                        { name: "萊姆 A4 特殊紙", price: 80, qty: 0, total: 0 },
+                        { name: "馬子狗 A4 特殊紙", price: 80, qty: 0, total: 0 }
+                    ]
+                }
             },
-            '2025': {
-                revenue: "25,790", quantity: "548", avg: "47.1", revLabel: "2025 年度數據", topBrandPerc: "100.0%", badge: "當前篩選：2025 年度",
-                datasets: [
-                    { label: '2025 總和', data: [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#6366f1', dash: [] },
-                    { label: '萊姆 2025', data: [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#a78bfa', dash: [5, 5] }
-                ],
-                brands: [25790, 0],
-                momRows: [
-                    { key: "2025-10", m: "10月", total: 8835, diff: null, pct: null, lime: 8835, mazi: 0 },
-                    { key: "2025-11", m: "11月", total: 10575, diff: 1740, pct: 19.7, lime: 10575, mazi: 0 },
-                    { key: "2025-12", m: "12月", total: 6380, diff: -4195, pct: -39.7, lime: 6380, mazi: 0 }
-                ],
-                insights: `<p>2025 年度為上市開盤期，以萊姆貼紙與圖框為主，11 月達到高峰 NT$ 10,575。</p>`,
-                table: [
-                    { name: "萊姆 貼紙 (806/807)", price: "45", qty: "322", total: "14,490" },
-                    { name: "萊姆 圖框 (805)", price: "50", qty: "226", total: "11,300" }
-                ]
-            },
-            '2026': {
-                revenue: "198,855", quantity: "3,762", avg: "52.9", revLabel: "2026 年度累計", topBrandPerc: "76.8%", badge: "當前篩選：2026 年度",
-                datasets: [
-                    { label: '2026 總和', data: [18775,62030,7865,21095,18450,10830,9760,14795,9220,26035,0,0], color: '#10b981', dash: [] },
-                    { label: '萊姆 2026', data: [11460,42060,7765,17755,15315,8075,8310,13650,8540,19805,0,0], color: '#a78bfa', dash: [5, 5] },
-                    { label: '馬子狗 2026', data: [7315,19970,100,3340,3135,2755,1450,1145,680,6230,0,0], color: '#34d399', dash: [5, 5] }
-                ],
-                brands: [152735, 46120],
-                momRows: [
-                    { key: "2026-01", m: "1月", total: 18775, diff: null, pct: null, lime: 11460, mazi: 7315 },
-                    { key: "2026-02", m: "2月", total: 62030, diff: 43255, pct: 230.4, lime: 42060, mazi: 19970 },
-                    { key: "2026-03", m: "3月", total: 7865, diff: -54165, pct: -87.3, lime: 7765, mazi: 100 },
-                    { key: "2026-04", m: "4月", total: 21095, diff: 13230, pct: 168.2, lime: 17755, mazi: 3340 },
-                    { key: "2026-05", m: "5月", total: 18450, diff: -2645, pct: -12.5, lime: 15315, mazi: 3135 },
-                    { key: "2026-06", m: "6月", total: 10830, diff: -7620, pct: -41.3, lime: 8075, mazi: 2755 },
-                    { key: "2026-07", m: "7月", total: 9760, diff: -1070, pct: -9.9, lime: 8310, mazi: 1450 },
-                    { key: "2026-08", m: "8月", total: 14795, diff: 5035, pct: 51.6, lime: 13650, mazi: 1145 },
-                    { key: "2026-09", m: "9月", total: 9220, diff: -5575, pct: -37.7, lime: 8540, mazi: 680 },
-                    { key: "2026-10", m: "10月", total: 26035, diff: 16815, pct: 182.4, lime: 19805, mazi: 6230 }
-                ],
-                insights: `<p>2026 年度累計營收達 NT$ 198,855。10 月營收大爆發，MoM +182.4%，雙 IP 同步強彈！</p>`,
-                table: [
-                    { name: "萊姆 貼紙", price: "45", qty: "1,543", total: "69,435" },
-                    { name: "萊姆 圖框", price: "50", qty: "1,018", total: "50,900" },
-                    { name: "萊姆 A4 特殊紙", price: "80", qty: "405", total: "32,400" },
-                    { name: "馬子狗 A4 特殊紙", price: "80", qty: "243", total: "19,440" },
-                    { name: "馬子狗 圖框", price: "50", qty: "359", total: "17,950" },
-                    { name: "馬子狗 貼紙", price: "45", qty: "194", total: "8,730" }
-                ]
+            snapshot: {
+                statusText: "已更新至 2026 年 10 月（含 8/10-9/30 及 10/1-10/30 萊姆＆馬子狗分品牌明細）",
+                hasData: true,
+                years: {
+                    '2025': {
+                        totalRev: 0, totalQty: 0, limeRev: 0, maziRev: 0,
+                        monthlyTotal: new Array(12).fill(0),
+                        monthlyLime:  new Array(12).fill(0),
+                        monthlyMazi:  new Array(12).fill(0),
+                        monthlyQty:   new Array(12).fill(0),
+                        products: []
+                    },
+                    '2026': {
+                        totalRev: 14500, totalQty: 96, limeRev: 5675, maziRev: 8825,
+                        monthlyTotal: [0, 0, 0, 0, 0, 0, 0, 0, 5350, 9150, 0, 0],
+                        monthlyLime:  [0, 0, 0, 0, 0, 0, 0, 0, 3450, 2225, 0, 0],
+                        monthlyMazi:  [0, 0, 0, 0, 0, 0, 0, 0, 1900, 6925, 0, 0],
+                        monthlyQty:   [0, 0, 0, 0, 0, 0, 0, 0, 42, 54, 0, 0],
+                        products: [
+                            { name: "SnapShot 妞拍貼 - 馬子狗 (10/1~10/30)", price: 165, qty: 42, total: 6925 },
+                            { name: "SnapShot 妞拍貼 - 萊姆 (8/10~9/30)", price: 123, qty: 28, total: 3450 },
+                            { name: "SnapShot 妞拍貼 - 萊姆 (10/1~10/30)", price: 185, qty: 12, total: 2225 },
+                            { name: "SnapShot 妞拍貼 - 馬子狗 (8/10~9/30)", price: 136, qty: 14, total: 1900 }
+                        ]
+                    }
+                },
+                monthlyDetails: {
+                    "2026-09": [
+                        { name: "SnapShot 妞拍貼 - 萊姆 (8/10-9/30)", price: 123, qty: 28, total: 3450 },
+                        { name: "SnapShot 妞拍貼 - 馬子狗 (8/10-9/30)", price: 136, qty: 14, total: 1900 }
+                    ],
+                    "2026-10": [
+                        { name: "SnapShot 妞拍貼 - 馬子狗 (10/1~10/30)", price: 165, qty: 42, total: 6925 },
+                        { name: "SnapShot 妞拍貼 - 萊姆 (10/1~10/30)", price: 185, qty: 12, total: 2225 }
+                    ]
+                }
             }
         };
 
-        let trendChart, brandChart;
+        // ==========================================
+        //  3. 動態彙整引擎 (即時計算個別通路或全通路加總)
+        // ==========================================
+        function getActiveChannelIds() {
+            return channelRegistry.filter(c => c.id !== 'overview').map(c => c.id);
+        }
 
-        function initCharts() {
-            const ctxTrend = document.getElementById('trendChart').getContext('2d');
-            trendChart = new Chart(ctxTrend, {
-                type: 'line',
-                data: { labels: months, datasets: [] },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    animation: { duration: 0 },
-                    plugins: { legend: { display: false } },
-                    onClick: (event, elements) => {
-                        if (elements.length > 0) {
-                            const index = elements[0].index;
-                            const monthNum = index + 1;
-                            const y = currentYear === '2025' ? '2025' : '2026';
-                            const key = `${y}-${String(monthNum).padStart(2, '0')}`;
-                            selectMonth(key, `${y}年 ${monthNum}月`);
+        function buildComputedView(channelId, yearFilter) {
+            const targetChannels = channelId === 'overview' ? getActiveChannelIds() : [channelId];
+            
+            let totalRev = 0, totalQty = 0, limeRev = 0, maziRev = 0;
+            const monthly2025Total = new Array(12).fill(0);
+            const monthly2026Total = new Array(12).fill(0);
+            const monthlyLimeCombined = new Array(12).fill(0);
+            const monthlyMaziCombined = new Array(12).fill(0);
+            const monthlyLime2026 = new Array(12).fill(0);
+            const monthlyMazi2026 = new Array(12).fill(0);
+            const monthlyLime2025 = new Array(12).fill(0);
+            const monthlyMazi2025 = new Array(12).fill(0);
+
+            const mergedMonthlyDetails = {};
+            const mergedProductsMap = {};
+
+            targetChannels.forEach(cid => {
+                const cData = channelDatasets[cid];
+                if (!cData) return;
+
+                const yearsToSum = yearFilter === 'all' ? ['2025', '2026'] : [yearFilter];
+                yearsToSum.forEach(yr => {
+                    const yObj = cData.years[yr];
+                    if (!yObj) return;
+
+                    totalRev += yObj.totalRev;
+                    totalQty += yObj.totalQty;
+                    limeRev += yObj.limeRev;
+                    maziRev += yObj.maziRev;
+
+                    for (let m = 0; m < 12; m++) {
+                        if (yr === '2025') {
+                            monthly2025Total[m] += yObj.monthlyTotal[m];
+                            monthlyLime2025[m] += yObj.monthlyLime[m];
+                            monthlyMazi2025[m] += yObj.monthlyMazi[m];
+                        } else if (yr === '2026') {
+                            monthly2026Total[m] += yObj.monthlyTotal[m];
+                            monthlyLime2026[m] += yObj.monthlyLime[m];
+                            monthlyMazi2026[m] += yObj.monthlyMazi[m];
                         }
-                    },
-                    scales: { 
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                        x: { grid: { display: false } }
+                        monthlyLimeCombined[m] += yObj.monthlyLime[m];
+                        monthlyMaziCombined[m] += yObj.monthlyMazi[m];
                     }
-                }
+
+                    yObj.products.forEach(p => {
+                        const baseName = p.name.replace(/\s*\(.*?\)/g, '').trim();
+                        const displayName = channelId === 'overview' && targetChannels.filter(id => channelDatasets[id].hasData).length > 1
+                            ? `[${cid.toUpperCase()}] ${baseName}`
+                            : baseName;
+                        const key = `${displayName}_${p.price}`;
+                        if (!mergedProductsMap[key]) {
+                            mergedProductsMap[key] = { name: displayName, price: p.price, qty: 0, total: 0 };
+                        }
+                        mergedProductsMap[key].qty += p.qty;
+                        mergedProductsMap[key].total += p.total;
+                    });
+                });
+
+                Object.keys(cData.monthlyDetails || {}).forEach(mKey => {
+                    if (!mergedMonthlyDetails[mKey]) mergedMonthlyDetails[mKey] = [];
+                    cData.monthlyDetails[mKey].forEach(item => {
+                        const prefix = channelId === 'overview' && targetChannels.filter(id => channelDatasets[id].hasData).length > 1
+                            ? `[${cid.toUpperCase()}] ` : '';
+                        mergedMonthlyDetails[mKey].push({
+                            name: prefix + item.name,
+                            price: item.price,
+                            qty: item.qty,
+                            total: item.total
+                        });
+                    });
+                });
             });
 
-            const ctxBrand = document.getElementById('brandChart').getContext('2d');
-            brandChart = new Chart(ctxBrand, {
-                type: 'doughnut',
-                data: { labels: ['萊姆系列', '馬子狗系列'], datasets: [{ data: [], backgroundColor: ['#6366f1', '#10b981'], borderWidth: 0 }] },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    animation: { duration: 0 },
-                    cutout: '70%', 
-                    plugins: { legend: { display: false } } 
+            let chartDatasets = [];
+            if (yearFilter === 'all') {
+                chartDatasets = [
+                    { label: '2025 總和', data: monthly2025Total, color: '#6366f1', dash: [] },
+                    { label: '2026 總和', data: monthly2026Total, color: '#10b981', dash: [] },
+                    { label: '萊姆 (累計)', data: monthlyLimeCombined, color: '#a78bfa', dash: [5, 5] },
+                    { label: '馬子狗 (累計)', data: monthlyMaziCombined, color: '#34d399', dash: [5, 5] }
+                ];
+            } else if (yearFilter === '2025') {
+                chartDatasets = [
+                    { label: '2025 總和', data: monthly2025Total, color: '#6366f1', dash: [] },
+                    { label: '萊姆 2025', data: monthlyLime2025, color: '#a78bfa', dash: [5, 5] },
+                    { label: '馬子狗 2025', data: monthlyMazi2025, color: '#34d399', dash: [5, 5] }
+                ];
+            } else {
+                chartDatasets = [
+                    { label: '2026 總和', data: monthly2026Total, color: '#10b981', dash: [] },
+                    { label: '萊姆 2026', data: monthlyLime2026, color: '#a78bfa', dash: [5, 5] },
+                    { label: '馬子狗 2026', data: monthlyMazi2026, color: '#34d399', dash: [5, 5] }
+                ];
+            }
+
+            const momRows = [];
+            if (yearFilter === 'all') {
+                let prevVal = null;
+                for (let m = 0; m < 12; m++) {
+                    const val = monthly2025Total[m];
+                    if (val === 0 && prevVal === null) continue;
+                    const diff = prevVal !== null ? val - prevVal : null;
+                    const pct = prevVal !== null && prevVal > 0 ? Number(((diff / prevVal) * 100).toFixed(1)) : null;
+                    momRows.push({
+                        key: `2025-${String(m + 1).padStart(2, '0')}`,
+                        m: `2025 ${m + 1}月`,
+                        total: val, diff, pct,
+                        lime: monthlyLime2025[m], mazi: monthlyMazi2025[m]
+                    });
+                    prevVal = val;
                 }
-            });
+                let last2026 = 0;
+                for (let m = 11; m >= 0; m--) {
+                    if (monthly2026Total[m] > 0) { last2026 = m + 1; break; }
+                }
+                for (let m = 0; m < last2026; m++) {
+                    const val = monthly2026Total[m];
+                    const diff = prevVal !== null ? val - prevVal : null;
+                    const pct = prevVal !== null && prevVal > 0 ? Number(((diff / prevVal) * 100).toFixed(1)) : null;
+                    momRows.push({
+                        key: `2026-${String(m + 1).padStart(2, '0')}`,
+                        m: `2026 ${String(m + 1).padStart(2, '0')}月`,
+                        total: val, diff, pct,
+                        lime: monthlyLime2026[m], mazi: monthlyMazi2026[m]
+                    });
+                    prevVal = val;
+                }
+            } else if (yearFilter === '2025') {
+                let prevVal = null;
+                for (let m = 0; m < 12; m++) {
+                    const val = monthly2025Total[m];
+                    if (val === 0 && prevVal === null) continue;
+                    const diff = prevVal !== null ? val - prevVal : null;
+                    const pct = prevVal !== null && prevVal > 0 ? Number(((diff / prevVal) * 100).toFixed(1)) : null;
+                    momRows.push({
+                        key: `2025-${String(m + 1).padStart(2, '0')}`,
+                        m: `${m + 1}月`,
+                        total: val, diff, pct,
+                        lime: monthlyLime2025[m], mazi: monthlyMazi2025[m]
+                    });
+                    prevVal = val;
+                }
+            } else {
+                let last2026 = 0;
+                for (let m = 11; m >= 0; m--) {
+                    if (monthly2026Total[m] > 0) { last2026 = m + 1; break; }
+                }
+                let prevVal = null;
+                for (let m = 0; m < last2026; m++) {
+                    const val = monthly2026Total[m];
+                    const diff = prevVal !== null ? val - prevVal : null;
+                    const pct = prevVal !== null && prevVal > 0 ? Number(((diff / prevVal) * 100).toFixed(1)) : null;
+                    momRows.push({
+                        key: `2026-${String(m + 1).padStart(2, '0')}`,
+                        m: `${m + 1}月`,
+                        total: val, diff, pct,
+                        lime: monthlyLime2026[m], mazi: monthlyMazi2026[m]
+                    });
+                    prevVal = val;
+                }
+            }
+
+            const sortedProducts = Object.values(mergedProductsMap).sort((a, b) => b.total - a.total);
+
+            let insightsHtml = '';
+            if (totalRev === 0) {
+                insightsHtml = `<p class="text-slate-400">目前此通路尚無銷售數據，請點擊右上角 <strong>「匯入 Excel / CSV」</strong> 上傳報表檔案。</p>`;
+            } else {
+                const latestRow = momRows[momRows.length - 1];
+                const momBadge = latestRow && latestRow.pct !== null
+                    ? (latestRow.pct >= 0 
+                        ? `<span class="text-rose-600 font-bold">▲ +${latestRow.pct}%</span>` 
+                        : `<span class="text-emerald-600 font-bold">▼ ${latestRow.pct}%</span>`)
+                    : '—';
+                const topBrand = limeRev >= maziRev ? '萊姆 (Lime)' : '馬子狗 (Whipped Bro)';
+                const topPerc = totalRev > 0 ? ((Math.max(limeRev, maziRev) / totalRev) * 100).toFixed(1) : '0.0';
+
+                insightsHtml = `
+                    <p><strong class="text-indigo-600">最新單月動態：</strong>${latestRow ? latestRow.m : ''} 營收為 <strong class="text-slate-800">NT$ ${latestRow ? latestRow.total.toLocaleString() : 0}</strong>（MoM ${momBadge}）。</p>
+                    <p><strong class="text-indigo-600">主力 IP 貢獻：</strong>由 <strong>${topBrand}</strong> 領軍，佔當前視圖總營收 <strong>${topPerc}%</strong>。</p>
+                    <p><strong class="text-indigo-600">累計銷售規模：</strong>總營收達 <strong>NT$ ${totalRev.toLocaleString()}</strong>，累計列印 <strong>${totalQty.toLocaleString()} 張</strong>。</p>
+                `;
+            }
+
+            return {
+                totalRev, totalQty, limeRev, maziRev,
+                avg: totalQty > 0 ? (totalRev / totalQty).toFixed(1) : "0.0",
+                topBrandName: limeRev >= maziRev ? "萊姆 (Lime)" : "馬子狗 (Whipped Bro)",
+                topBrandPerc: totalRev > 0 ? ((Math.max(limeRev, maziRev) / totalRev) * 100).toFixed(1) + "%" : "0.0%",
+                chartDatasets,
+                momRows,
+                insightsHtml,
+                products: sortedProducts,
+                monthlyDetails: mergedMonthlyDetails
+            };
+        }
+
+        // ==========================================
+        //  4. UI 渲染與分頁切換邏輯
+        // ==========================================
+        let trendChart, brandChart;
+        let activeMonthlyDetails = {};
+
+        function showBanner(htmlMessage, isError = false) {
+            const banner = document.getElementById('import-banner');
+            const bannerText = document.getElementById('import-banner-text');
+            banner.className = isError
+                ? "mb-6 bg-rose-50 border border-rose-200 text-rose-900 p-4 rounded-2xl shadow-sm flex items-start justify-between gap-4"
+                : "mb-6 bg-emerald-50 border border-emerald-200 text-emerald-900 p-4 rounded-2xl shadow-sm flex items-start justify-between gap-4";
+            bannerText.innerHTML = htmlMessage;
+            banner.classList.remove('hidden');
+        }
+
+        function renderChannelTabs() {
+            const container = document.getElementById('channel-tabs-container');
+            container.innerHTML = channelRegistry.map(ch => {
+                const isActive = currentChannel === ch.id;
+                const cData = channelDatasets[ch.id];
+                const dotHtml = ch.id === 'overview' 
+                    ? '' 
+                    : `<span class="w-2 h-2 rounded-full ${cData && cData.hasData ? 'bg-emerald-400' : 'bg-slate-300'}"></span>`;
+                return `
+                    <button onclick="switchChannel('${ch.id}')" 
+                        class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${isActive ? 'channel-tab-active' : 'text-slate-600 hover:bg-slate-100'}">
+                        ${dotHtml}
+                        <span>${ch.name}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function switchChannel(channelId) {
+            currentChannel = channelId;
+            selectedMonthKey = null;
+            renderChannelTabs();
+            refreshDashboard();
         }
 
         function updateYear(year) {
             currentYear = year;
-            selectedMonthKey = null; // 切換年份時重設選取月份
-            const d = dataStore[year];
-            if (!d) return;
-            
+            selectedMonthKey = null;
+            refreshDashboard();
+        }
+
+        function refreshDashboard() {
+            const chInfo = channelRegistry.find(c => c.id === currentChannel);
+            const viewData = buildComputedView(currentChannel, currentYear);
+            activeMonthlyDetails = viewData.monthlyDetails;
+
             ['all', '2025', '2026'].forEach(y => {
                 const btn = document.getElementById(`btn-${y}`);
                 if (btn) {
                     btn.classList.remove('active-tab', 'text-slate-500');
-                    if(y === year) btn.classList.add('active-tab'); else btn.classList.add('text-slate-500');
+                    if (y === currentYear) btn.classList.add('active-tab');
+                    else btn.classList.add('text-slate-500');
                 }
             });
 
-            document.getElementById('badge-year').innerText = d.badge;
-            document.getElementById('export-title').innerText = `銷售業績數據分析總表 (${year === 'all' ? '全部累計' : year + '年度'})`;
-            document.getElementById('kpi-revenue').innerText = "NT$ " + d.revenue;
-            document.getElementById('kpi-revenue-label').innerText = d.revLabel;
-            document.getElementById('kpi-quantity').innerHTML = d.quantity + ' <span class="text-lg font-normal text-slate-400">張</span>';
-            document.getElementById('kpi-avg').innerText = "NT$ " + d.avg;
-            document.getElementById('kpi-brand-perc').innerText = "佔營收 " + d.topBrandPerc;
+            const pill = document.getElementById('channel-pill');
+            pill.innerText = chInfo.shortName;
+            pill.className = `px-3 py-1 rounded-full text-xs font-bold ${chInfo.badgeColor}`;
 
-            // Trend Chart
-            trendChart.data.datasets = d.datasets.map(ds => ({
+            const yearText = currentYear === 'all' ? '全部累計' : `${currentYear} 年度`;
+            document.getElementById('badge-year').innerText = `當前篩選：${chInfo.shortName} ｜ ${yearText}`;
+            document.getElementById('export-title').innerText = `${chInfo.name} — 業績分析總表 (${yearText})`;
+
+            const uploadBtnText = document.getElementById('upload-btn-text');
+            if (currentChannel === 'overview') {
+                uploadBtnText.innerText = `匯入資料 (Excel / CSV)`;
+            } else {
+                uploadBtnText.innerText = `匯入 ${chInfo.shortName} 報表 (Excel/CSV)`;
+            }
+
+            if (currentChannel === 'overview') {
+                const statuses = getActiveChannelIds().map(id => {
+                    const info = channelRegistry.find(c => c.id === id);
+                    return `${info.shortName}：${channelDatasets[id].statusText}`;
+                }).join(' ｜ ');
+                document.getElementById('data-status-label').innerText = `資料狀態：${statuses}`;
+            } else {
+                document.getElementById('data-status-label').innerText = `資料狀態：${channelDatasets[currentChannel].statusText}`;
+            }
+
+            document.getElementById('kpi-revenue').innerText = "NT$ " + viewData.totalRev.toLocaleString();
+            document.getElementById('kpi-revenue-label').innerText = `${chInfo.shortName} (${yearText})`;
+            document.getElementById('kpi-quantity').innerHTML = viewData.totalQty.toLocaleString() + ' <span class="text-lg font-normal text-slate-400">張</span>';
+            document.getElementById('kpi-avg').innerText = "NT$ " + viewData.avg;
+            document.getElementById('kpi-top-brand').innerText = viewData.totalRev > 0 ? viewData.topBrandName : "尚無資料";
+            document.getElementById('kpi-brand-perc').innerText = viewData.totalRev > 0 ? `佔營收 ${viewData.topBrandPerc}` : "等待匯入";
+
+            const overviewSection = document.getElementById('overview-channel-section');
+            if (currentChannel === 'overview') {
+                overviewSection.classList.remove('hidden');
+                renderChannelSummaryTable();
+            } else {
+                overviewSection.classList.add('hidden');
+            }
+
+            trendChart.data.datasets = viewData.chartDatasets.map(ds => ({
                 label: ds.label,
                 data: ds.data,
                 borderColor: ds.color,
@@ -490,35 +896,82 @@
             trendChart.update();
 
             const customLegend = document.getElementById('chart-legend-custom');
-            customLegend.innerHTML = d.datasets.map(ds => `
+            customLegend.innerHTML = viewData.chartDatasets.map(ds => `
                 <div class="flex items-center gap-1.5">
                     <span class="w-6 h-0.5" style="background-color: ${ds.color}; border-top: 2px ${ds.dash.length > 0 ? 'dashed' : 'solid'} ${ds.color}"></span>
                     <span class="text-slate-600 text-xs">${ds.label}</span>
                 </div>
             `).join('');
 
-            // Brand Pie
-            brandChart.data.datasets[0].data = d.brands;
+            brandChart.data.datasets[0].data = [viewData.limeRev, viewData.maziRev];
             brandChart.update();
 
-            const legend = document.getElementById('brand-legend');
-            legend.innerHTML = `
-                <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-indigo-500 rounded-full"></span> 萊姆系列</span><span class="font-bold">NT$ ${d.brands[0].toLocaleString()}</span></div>
-                <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-emerald-500 rounded-full"></span> 馬子狗系列</span><span class="font-bold">NT$ ${d.brands[1].toLocaleString()}</span></div>
+            document.getElementById('brand-legend').innerHTML = `
+                <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-indigo-500 rounded-full"></span> 萊姆 (Lime)</span><span class="font-bold">NT$ ${viewData.limeRev.toLocaleString()}</span></div>
+                <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-emerald-500 rounded-full"></span> 馬子狗 (Whipped Bro)</span><span class="font-bold">NT$ ${viewData.maziRev.toLocaleString()}</span></div>
             `;
 
-            // MoM Table Render
-            renderMoMTable(d.momRows);
+            renderMoMTable(viewData.momRows);
+            document.getElementById('mom-insights-content').innerHTML = viewData.insightsHtml;
+            renderProductTable(viewData.products, null);
+        }
 
-            // MoM Insights
-            document.getElementById('mom-insights-content').innerHTML = d.insights;
+        function renderChannelSummaryTable() {
+            const tbody = document.getElementById('channel-summary-tbody');
+            const cIds = getActiveChannelIds();
+            
+            let sumLime = 0, sumMazi = 0, sumQty = 0, sumRev = 0;
+            const rowsData = cIds.map(cid => {
+                const info = channelRegistry.find(c => c.id === cid);
+                const computed = buildComputedView(cid, currentYear);
+                sumLime += computed.limeRev;
+                sumMazi += computed.maziRev;
+                sumQty += computed.totalQty;
+                sumRev += computed.totalRev;
+                return { info, computed, hasData: channelDatasets[cid].hasData };
+            });
 
-            // Render Product Table (Default to full view)
-            renderProductTable(d.table, null);
+            let html = rowsData.map(r => {
+                const share = sumRev > 0 ? ((r.computed.totalRev / sumRev) * 100).toFixed(1) + '%' : '0.0%';
+                const statusBadge = r.hasData 
+                    ? `<span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">已載入數據</span>`
+                    : `<span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">待匯入檔案</span>`;
+                return `
+                    <tr onclick="switchChannel('${r.info.id}')" class="hover:bg-indigo-50/50 cursor-pointer transition-colors">
+                        <td class="py-3.5 font-bold text-slate-800 flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-xs ${r.info.badgeColor}">${r.info.shortName}</span>
+                            <span>${r.info.name}</span>
+                        </td>
+                        <td class="py-3.5">${statusBadge}</td>
+                        <td class="py-3.5 text-right text-indigo-600 font-medium">NT$ ${r.computed.limeRev.toLocaleString()}</td>
+                        <td class="py-3.5 text-right text-emerald-600 font-medium">NT$ ${r.computed.maziRev.toLocaleString()}</td>
+                        <td class="py-3.5 text-center font-semibold text-slate-700">${r.computed.totalQty.toLocaleString()}</td>
+                        <td class="py-3.5 text-right font-bold text-slate-800">NT$ ${r.computed.totalRev.toLocaleString()}</td>
+                        <td class="py-3.5 text-right font-bold text-slate-600">${share}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            html += `
+                <tr class="bg-slate-800 text-white font-bold">
+                    <td class="py-4 pl-3 rounded-l-xl">全通路合計總額 (Total)</td>
+                    <td class="py-4 text-xs text-slate-300">自動即時加總</td>
+                    <td class="py-4 text-right text-indigo-300">NT$ ${sumLime.toLocaleString()}</td>
+                    <td class="py-4 text-right text-emerald-300">NT$ ${sumMazi.toLocaleString()}</td>
+                    <td class="py-4 text-center">${sumQty.toLocaleString()}</td>
+                    <td class="py-4 text-right text-amber-300 text-base">NT$ ${sumRev.toLocaleString()}</td>
+                    <td class="py-4 pr-3 text-right rounded-r-xl">100.0%</td>
+                </tr>
+            `;
+            tbody.innerHTML = html;
         }
 
         function renderMoMTable(rows) {
             const momTableBody = document.getElementById('mom-table-body');
+            if (!rows || rows.length === 0) {
+                momTableBody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400">尚無月度數據，請匯入 Excel 或 CSV 檔案</td></tr>`;
+                return;
+            }
             momTableBody.innerHTML = rows.map(row => {
                 let diffHtml = '<span class="text-slate-400">—</span>';
                 let pctHtml = '<span class="text-slate-400">—</span>';
@@ -551,53 +1004,35 @@
             }).join('');
         }
 
-        // ==========================================
-        //  點選月份下鑽品項功能
-        // ==========================================
         function selectMonth(key, label) {
             selectedMonthKey = key;
-            const items = monthlyDetailsStore[key];
-            if (!items) {
-                alert(`查無 ${label} 的品項資料！`);
+            const items = activeMonthlyDetails[key];
+            if (!items || items.length === 0) {
+                showBanner(`查無 <strong>${label}</strong> 的品項明細資料。`, true);
                 return;
             }
 
-            // 更新月度表格的高亮樣式
-            const d = dataStore[currentYear];
-            if (d && d.momRows) {
-                renderMoMTable(d.momRows);
-            }
+            const viewData = buildComputedView(currentChannel, currentYear);
+            renderMoMTable(viewData.momRows);
 
-            // 試算當月各品項佔比
             const monthTotal = items.reduce((sum, item) => sum + item.total, 0);
-            const formattedTable = items.map(p => {
-                const perc = monthTotal > 0 ? ((p.total / monthTotal) * 100).toFixed(1) + '%' : '0.0%';
-                return {
-                    name: p.name,
-                    price: p.price,
-                    qty: p.qty.toLocaleString(),
-                    total: p.total.toLocaleString(),
-                    rawTotal: p.total,
-                    perc: perc
-                };
-            }).sort((a, b) => b.rawTotal - a.rawTotal);
+            const formattedTable = items.map(p => ({
+                name: p.name,
+                price: p.price,
+                qty: p.qty,
+                total: p.total,
+                perc: monthTotal > 0 ? ((p.total / monthTotal) * 100).toFixed(1) + '%' : '0.0%'
+            })).sort((a, b) => b.total - a.total);
 
             renderProductTable(formattedTable, label);
-
-            // 平滑滾動至商品明細區塊
-            const target = document.getElementById('product-detail-card');
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
+            document.getElementById('product-detail-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function resetMonthFilter() {
             selectedMonthKey = null;
-            const d = dataStore[currentYear];
-            if (d) {
-                renderMoMTable(d.momRows);
-                renderProductTable(d.table, null);
-            }
+            const viewData = buildComputedView(currentChannel, currentYear);
+            renderMoMTable(viewData.momRows);
+            renderProductTable(viewData.products, null);
         }
 
         function renderProductTable(items, monthLabel) {
@@ -607,29 +1042,32 @@
             const resetBtn = document.getElementById('btn-reset-month');
             const tbody = document.getElementById('product-table-body');
 
+            const chInfo = channelRegistry.find(c => c.id === currentChannel);
+
             if (monthLabel) {
-                titleEl.innerText = `重點銷售明細清單 (${monthLabel})`;
+                titleEl.innerText = `重點銷售明細清單 — ${chInfo.shortName} (${monthLabel})`;
                 descEl.innerText = `已為您篩選【${monthLabel}】當月實際列印銷量與品項營收明細`;
                 badgeEl.innerText = `篩選月份：${monthLabel}`;
                 badgeEl.classList.remove('hidden');
                 resetBtn.classList.remove('hidden');
             } else {
                 const yLabel = currentYear === 'all' ? '全部累計' : `${currentYear} 年度`;
-                titleEl.innerText = `重點銷售明細清單 (${yLabel})`;
+                titleEl.innerText = `重點銷售明細清單 — ${chInfo.shortName} (${yLabel})`;
                 descEl.innerText = `顯示各商品總銷售額與銷量排名 (點選上方月份可看當月品項)`;
                 badgeEl.classList.add('hidden');
                 resetBtn.classList.add('hidden');
             }
 
-            // 計算總金額以算百分比
-            const totalSum = items.reduce((sum, row) => {
-                const val = typeof row.total === 'number' ? row.total : Number(String(row.total).replace(/,/g, '')) || 0;
-                return sum + val;
-            }, 0);
+            if (!items || items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">尚無商品明細資料，請匯入檔案</td></tr>`;
+                return;
+            }
+
+            const totalSum = items.reduce((sum, row) => sum + (Number(row.total) || 0), 0);
 
             tbody.innerHTML = items.map(row => {
-                const val = typeof row.total === 'number' ? row.total : Number(String(row.total).replace(/,/g, '')) || 0;
-                const perc = row.perc || (totalSum > 0 ? ((val / totalSum) * 100).toFixed(1) + '%' : '—');
+                const val = Number(row.total) || 0;
+                const perc = row.perc || (totalSum > 0 ? ((val / totalSum) * 100).toFixed(1) + '%' : '0.0%');
                 const isZero = val === 0;
 
                 return `
@@ -638,9 +1076,9 @@
                             <span class="w-2 h-2 rounded-full ${row.name.includes('萊姆') ? 'bg-indigo-500' : 'bg-emerald-500'}"></span>
                             ${row.name}
                         </td>
-                        <td class="py-4 text-center text-slate-500">${row.price}</td>
-                        <td class="py-4 text-center font-semibold ${isZero ? 'text-slate-400' : 'text-slate-700'}">${row.qty}</td>
-                        <td class="py-4 text-right font-bold ${isZero ? 'text-slate-400' : 'text-slate-800'}">NT$ ${row.total}</td>
+                        <td class="py-4 text-center text-slate-500">${row.price || '—'}</td>
+                        <td class="py-4 text-center font-semibold ${isZero ? 'text-slate-400' : 'text-slate-700'}">${Number(row.qty).toLocaleString()}</td>
+                        <td class="py-4 text-right font-bold ${isZero ? 'text-slate-400' : 'text-slate-800'}">NT$ ${val.toLocaleString()}</td>
                         <td class="py-4 text-right text-xs text-slate-400 font-medium">${perc}</td>
                     </tr>
                 `;
@@ -648,9 +1086,25 @@
         }
 
         // ==========================================
-        //  Excel 自動解析引擎 (SheetJS 驅動)
+        //  5. 三階段智慧解析引擎 + 欄位預覽確認視窗
         // ==========================================
-        function handleExcelUpload(event) {
+        let pendingWorkbook = null;
+        let pendingFileName = '';
+
+        function triggerFileUpload() {
+            document.getElementById('data-file-input').click();
+        }
+
+        function cleanNumber(val) {
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            if (val === null || val === undefined) return 0;
+            const cleaned = String(val).replace(/[NT$＄,，元張份個\s]/g, '').trim();
+            if (!cleaned || cleaned === '-' || cleaned === '—') return 0;
+            const num = Number(cleaned);
+            return isNaN(num) ? 0 : num;
+        }
+
+        function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -659,224 +1113,473 @@
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    parseWorkbookData(workbook, file.name);
-                    alert(`成功讀取並更新報表：${file.name}！現在您可以點擊任意月份查看當月商品明細。`);
+                    pendingWorkbook = workbook;
+                    pendingFileName = file.name;
+
+                    if (currentChannel === 'overview') {
+                        const lowerName = file.name.toLowerCase();
+                        if (lowerName.includes('snapshot') || lowerName.includes('快照')) {
+                            openSnapshotMapperModal(workbook, file.name);
+                        } else if (lowerName.includes('ibon') || lowerName.includes('遊戲橘子')) {
+                            const report = parseIbonWorkbook(workbook, file.name, 'ibon');
+                            showBanner(report, false);
+                            switchChannel('ibon');
+                        } else {
+                            document.getElementById('channel-modal-filename').innerText = `檔案名稱：${file.name}`;
+                            document.getElementById('channel-select-modal').classList.remove('hidden');
+                        }
+                    } else if (currentChannel === 'snapshot') {
+                        openSnapshotMapperModal(workbook, file.name);
+                    } else {
+                        const report = parseIbonWorkbook(workbook, file.name, currentChannel);
+                        showBanner(report, false);
+                        switchChannel(currentChannel);
+                    }
                 } catch (err) {
-                    console.error("解析 Excel 失敗:", err);
-                    alert("檔案解析失敗，請確認上傳的是遊戲橘子標準授權格式的 .xlsx 檔案！");
+                    console.error("檔案讀取失敗:", err);
+                    showBanner(`❌ 檔案讀取失敗：${err.message}`, true);
+                } finally {
+                    event.target.value = '';
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        function parseSheet(sheet) {
+        function closeChannelModal() {
+            document.getElementById('channel-select-modal').classList.add('hidden');
+        }
+
+        function confirmTargetChannel(ch) {
+            closeChannelModal();
+            if (!pendingWorkbook) return;
+            if (ch === 'snapshot') {
+                openSnapshotMapperModal(pendingWorkbook, pendingFileName);
+            } else {
+                try {
+                    const report = parseIbonWorkbook(pendingWorkbook, pendingFileName, ch);
+                    showBanner(report, false);
+                    switchChannel(ch);
+                } catch (err) {
+                    showBanner(`❌ IBON 匯入失敗：${err.message}`, true);
+                }
+            }
+        }
+
+        // --- SNAPSHOT 欄位偵測與預覽視窗邏輯 ---
+        function openSnapshotMapperModal(workbook, fileName) {
+            const sheetSelect = document.getElementById('map-sheet');
+            sheetSelect.innerHTML = workbook.SheetNames.map((s, idx) => `<option value="${idx}">${s}</option>`).join('');
+
+            const fnMatch = fileName.match(/115(\d{2})|2026[-_.]?(\d{1,2})|(\d{1,2})月/);
+            if (fnMatch) {
+                const mVal = parseInt(fnMatch[1] || fnMatch[2] || fnMatch[3], 10);
+                if (mVal >= 1 && mVal <= 12) {
+                    document.getElementById('map-target-month').value = String(mVal - 1);
+                }
+            }
+            if (fileName.includes('2025') || fileName.includes('114')) {
+                document.getElementById('map-target-year').value = '2025';
+            } else {
+                document.getElementById('map-target-year').value = '2026';
+            }
+
+            document.getElementById('mapper-subtitle').innerText = `檔案：【${fileName}】 — 請確認系統偵測的「總計數量」與「總計金額」欄位，或手動下拉調整`;
+            document.getElementById('snapshot-mapper-modal').classList.remove('hidden');
+            onMapperSheetChange();
+        }
+
+        function closeMapperModal() {
+            document.getElementById('snapshot-mapper-modal').classList.add('hidden');
+        }
+
+        function onMapperSheetChange() {
+            const sheetIdx = parseInt(document.getElementById('map-sheet').value, 10) || 0;
+            const sheetName = pendingWorkbook.SheetNames[sheetIdx];
+            const sheet = pendingWorkbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+            const headerRowSelect = document.getElementById('map-header-row');
+            const maxScan = Math.min(rows.length, 15);
+            let detectedHeaderIdx = 0;
+
+            headerRowSelect.innerHTML = '';
+            for (let r = 0; r < maxScan; r++) {
+                const previewTxt = rows[r].filter(c => c !== '').slice(0, 4).join(' | ') || '(空白列)';
+                headerRowSelect.innerHTML += `<option value="${r}">第 ${r + 1} 列：${previewTxt.substring(0, 35)}</option>`;
+
+                const rowStr = rows[r].map(c => String(c || '').trim());
+                if (rowStr.some(c => c.includes('數量') || c.includes('張數') || c.includes('金額') || c.includes('總計') || c.includes('合計'))) {
+                    detectedHeaderIdx = r;
+                }
+            }
+
+            if (detectedHeaderIdx + 1 < rows.length) {
+                const nextRowStr = rows[detectedHeaderIdx + 1].map(c => String(c || '').trim());
+                if (nextRowStr.some(c => c === '數量' || c === '金額' || c === '總計數量' || c === '總計金額')) {
+                    detectedHeaderIdx += 1;
+                }
+            }
+
+            headerRowSelect.value = String(detectedHeaderIdx);
+            onMapperHeaderRowChange();
+        }
+
+        function onMapperHeaderRowChange() {
+            const sheetIdx = parseInt(document.getElementById('map-sheet').value, 10) || 0;
+            const headerRowIdx = parseInt(document.getElementById('map-header-row').value, 10) || 0;
+            const sheet = pendingWorkbook.Sheets[pendingWorkbook.SheetNames[sheetIdx]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+            const maxCols = rows.reduce((m, r) => Math.max(m, r.length), 0);
+            const curRow = rows[headerRowIdx] || [];
+            const prevRow = headerRowIdx > 0 ? (rows[headerRowIdx - 1] || []) : [];
+
+            const colOptions = [];
+            let bestNameCol = 0;
+            let bestQtyCol = -1;
+            let bestRevCol = -1;
+
+            for (let c = 0; c < maxCols; c++) {
+                const topLabel = String(prevRow[c] || '').trim();
+                const curLabel = String(curRow[c] || '').trim();
+                const combinedLabel = topLabel && curLabel && topLabel !== curLabel ? `${topLabel}-${curLabel}` : (curLabel || topLabel || `第 ${c + 1} 欄`);
+                const colLetter = XLSX.utils.encode_col(c);
+                colOptions.push({ idx: c, label: `[${colLetter}欄] ${combinedLabel}`, combinedLabel });
+
+                const lower = combinedLabel.toLowerCase();
+                if (combinedLabel.includes('商品') || combinedLabel.includes('品項') || combinedLabel.includes('名稱') || combinedLabel.includes('項目')) {
+                    bestNameCol = c;
+                }
+                if (combinedLabel.includes('總計數量') || combinedLabel.includes('總數量') || combinedLabel.includes('合計數量') || combinedLabel.includes('列印總張數') || combinedLabel.includes('總計張數')) {
+                    bestQtyCol = c;
+                } else if (bestQtyCol === -1 && (combinedLabel.includes('數量') || combinedLabel.includes('張數') || lower === 'qty')) {
+                    bestQtyCol = c;
+                }
+
+                if (combinedLabel.includes('總計金額') || combinedLabel.includes('總金額') || combinedLabel.includes('合計金額') || combinedLabel.includes('銷售總額') || combinedLabel === '總計') {
+                    bestRevCol = c;
+                } else if (bestRevCol === -1 && (combinedLabel.includes('金額') || combinedLabel.includes('小計') || combinedLabel.includes('營收') || lower === 'amount' || lower === 'total')) {
+                    bestRevCol = c;
+                }
+            }
+
+            if (bestQtyCol === -1 && maxCols >= 2) bestQtyCol = maxCols - 2;
+            if (bestRevCol === -1 && maxCols >= 1) bestRevCol = maxCols - 1;
+
+            const nameSelect = document.getElementById('map-name-col');
+            const qtySelect = document.getElementById('map-qty-col');
+            const revSelect = document.getElementById('map-rev-col');
+
+            const optionsHtml = colOptions.map(o => `<option value="${o.idx}">${o.label}</option>`).join('');
+            nameSelect.innerHTML = optionsHtml;
+            qtySelect.innerHTML = `<option value="-1">(無數量欄)</option>` + optionsHtml;
+            revSelect.innerHTML = optionsHtml;
+
+            nameSelect.value = String(bestNameCol);
+            qtySelect.value = String(bestQtyCol);
+            revSelect.value = String(bestRevCol);
+
+            recalcMapperPreview();
+        }
+
+        function extractSnapshotRowsFromUI() {
+            const sheetIdx = parseInt(document.getElementById('map-sheet').value, 10) || 0;
+            const headerRowIdx = parseInt(document.getElementById('map-header-row').value, 10) || 0;
+            const nameCol = parseInt(document.getElementById('map-name-col').value, 10);
+            const qtyCol = parseInt(document.getElementById('map-qty-col').value, 10);
+            const revCol = parseInt(document.getElementById('map-rev-col').value, 10);
+
+            const sheetName = pendingWorkbook.SheetNames[sheetIdx];
+            const sheet = pendingWorkbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+            let items = [];
+            let summaryRowQty = null;
+            let summaryRowRev = null;
+
+            for (let r = headerRowIdx + 1; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
+
+                const rawName = String(row[nameCol] || '').trim();
+                const allCellsStr = row.map(c => String(c || '').trim()).join(' ');
+                const q = qtyCol >= 0 ? cleanNumber(row[qtyCol]) : 0;
+                const rev = revCol >= 0 ? cleanNumber(row[revCol]) : 0;
+
+                const isSummary = rawName === '總計' || rawName === '合計' || rawName === '總和' || rawName.toLowerCase() === 'total' ||
+                                  (rawName === '' && (allCellsStr.includes('總計') || allCellsStr.includes('合計')));
+
+                if (isSummary) {
+                    if (q > 0) summaryRowQty = q;
+                    if (rev > 0) summaryRowRev = rev;
+                    continue;
+                }
+
+                if (rawName.includes('請款') || rawName.includes('稅額') || rawName.includes('授權金') || rawName.includes('備註')) continue;
+
+                if (q > 0 || rev > 0) {
+                    const itemName = rawName || `SNAPSHOT 項目 ${items.length + 1}`;
+                    const price = q > 0 && rev > 0 ? Math.round(rev / q) : 0;
+                    items.push({ name: itemName, price, qty: q, total: rev });
+                }
+            }
+
+            if (items.length === 0 && (summaryRowQty > 0 || summaryRowRev > 0)) {
+                const q = summaryRowQty || 0;
+                const rev = summaryRowRev || 0;
+                items.push({
+                    name: 'SNAPSHOT 總計銷售',
+                    price: q > 0 ? Math.round(rev / q) : 0,
+                    qty: q,
+                    total: rev
+                });
+            }
+
+            const totalQty = items.reduce((s, x) => s + x.qty, 0);
+            const totalRev = items.reduce((s, x) => s + x.total, 0);
+
+            return { rows, headerRowIdx, nameCol, qtyCol, revCol, items, totalQty, totalRev, sheetName };
+        }
+
+        function recalcMapperPreview() {
+            const parsed = extractSnapshotRowsFromUI();
+            document.getElementById('preview-snap-qty').innerText = `${parsed.totalQty.toLocaleString()} 張`;
+            document.getElementById('preview-snap-rev').innerText = `NT$ ${parsed.totalRev.toLocaleString()}`;
+
+            const thead = document.getElementById('mapper-preview-thead');
+            const tbody = document.getElementById('mapper-preview-tbody');
+            const maxCols = parsed.rows.reduce((m, r) => Math.max(m, r.length), 0);
+            const headerCells = parsed.rows[parsed.headerRowIdx] || [];
+
+            let thHtml = '<tr><th class="p-2 border-r border-slate-200">列</th>';
+            for (let c = 0; c < maxCols; c++) {
+                let highlight = '';
+                if (c === parsed.nameCol) highlight = 'bg-slate-200 text-slate-900';
+                if (c === parsed.qtyCol) highlight = 'bg-indigo-100 text-indigo-900 font-bold';
+                if (c === parsed.revCol) highlight = 'bg-emerald-100 text-emerald-900 font-bold';
+                thHtml += `<th class="p-2 border-r border-slate-200 ${highlight}">${String(headerCells[c] || XLSX.utils.encode_col(c))}</th>`;
+            }
+            thHtml += '</tr>';
+            thead.innerHTML = thHtml;
+
+            const previewSlice = parsed.rows.slice(parsed.headerRowIdx + 1, parsed.headerRowIdx + 13);
+            tbody.innerHTML = previewSlice.map((r, idx) => {
+                let tds = `<td class="p-2 border-r border-slate-100 text-slate-400">${parsed.headerRowIdx + 2 + idx}</td>`;
+                for (let c = 0; c < maxCols; c++) {
+                    let highlight = '';
+                    if (c === parsed.qtyCol) highlight = 'bg-indigo-50/60 font-bold text-indigo-800';
+                    if (c === parsed.revCol) highlight = 'bg-emerald-50/60 font-bold text-emerald-800';
+                    tds += `<td class="p-2 border-r border-slate-100 ${highlight}">${r[c] !== undefined ? r[c] : ''}</td>`;
+                }
+                return `<tr>${tds}</tr>`;
+            }).join('');
+        }
+
+        function commitSnapshotMapping() {
+            const parsed = extractSnapshotRowsFromUI();
+            if (parsed.totalQty === 0 && parsed.totalRev === 0) {
+                showBanner('❌ 未抓取到任何大於 0 的數量或金額，請重新檢查下拉欄位是否對應正確！', true);
+                return;
+            }
+
+            const targetYear = document.getElementById('map-target-year').value;
+            const targetMonthIdx = parseInt(document.getElementById('map-target-month').value, 10);
+
+            channelDatasets['snapshot'] = createEmptyChannelData("SNAPSHOT");
+            const snapObj = channelDatasets['snapshot'];
+            const yTarget = snapObj.years[targetYear];
+
+            let limeRev = 0, maziRev = 0;
+            parsed.items.forEach(item => {
+                const lowerName = item.name.toLowerCase();
+                const isMazi = item.name.includes('馬子狗') || lowerName.includes('mazi') || lowerName.includes('whipped');
+                if (isMazi) maziRev += item.total;
+                else limeRev += item.total;
+            });
+
+            yTarget.totalQty = parsed.totalQty;
+            yTarget.totalRev = parsed.totalRev;
+            yTarget.limeRev = limeRev;
+            yTarget.maziRev = maziRev;
+            yTarget.monthlyQty[targetMonthIdx] = parsed.totalQty;
+            yTarget.monthlyTotal[targetMonthIdx] = parsed.totalRev;
+            yTarget.monthlyLime[targetMonthIdx] = limeRev;
+            yTarget.monthlyMazi[targetMonthIdx] = maziRev;
+            yTarget.products = parsed.items;
+
+            const mKey = `${targetYear}-${String(targetMonthIdx + 1).padStart(2, '0')}`;
+            snapObj.monthlyDetails[mKey] = parsed.items;
+            snapObj.hasData = true;
+            snapObj.statusText = `已匯入【${pendingFileName}】（${targetYear}年${targetMonthIdx + 1}月｜總計數量：${parsed.totalQty.toLocaleString()} 張｜總計金額：NT$ ${parsed.totalRev.toLocaleString()}）`;
+
+            closeMapperModal();
+            showBanner(`
+                <div class="font-bold text-emerald-800 mb-1">✅ SNAPSHOT 數據已成功匯入並同步至主頁加總！</div>
+                <div>• <strong>來源檔案：</strong>${pendingFileName}（工作表：${parsed.sheetName}，歸屬 ${targetYear} 年 ${targetMonthIdx + 1} 月）</div>
+                <div>• <strong>匯入總計：</strong>數量 <strong>${parsed.totalQty.toLocaleString()} 張</strong> ｜ 金額 <strong>NT$ ${parsed.totalRev.toLocaleString()}</strong></div>
+            `, false);
+
+            switchChannel('snapshot');
+        }
+
+        // --- IBON 標準授權格式解析器 ---
+        function parseSingleIbonSheet(sheet) {
             const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: 0 });
-            if (rows.length < 7) return null;
+            if (rows.length < 2) return null;
 
-            const productNames = ["萊姆圖框", "萊姆貼紙", "萊姆A4特殊紙", "馬子狗圖框", "馬子狗貼紙", "馬子狗A4特殊紙"];
-            const prices = [50, 45, 80, 50, 45, 80];
-            
-            const monthlyTotalRev = new Array(12).fill(0);
-            const monthlyLimeRev = new Array(12).fill(0);
-            const monthlyMaziRev = new Array(12).fill(0);
-            const monthlyTotalQty = new Array(12).fill(0);
-
-            const productSummary = productNames.map((name, i) => ({
-                name: name.replace("圖框", " 圖框").replace("貼紙", " 貼紙").replace("A4", " A4 "),
-                price: prices[i],
-                qty: 0,
-                total: 0
-            }));
-
-            // 儲存每個月的品項陣列: monthlyProducts[monthIndex] = [...]
+            const monthlyTotal = new Array(12).fill(0);
+            const monthlyLime = new Array(12).fill(0);
+            const monthlyMazi = new Array(12).fill(0);
+            const monthlyQty = new Array(12).fill(0);
+            const products = [];
             const monthlyProducts = Array.from({ length: 12 }, () => []);
 
-            for (let p = 0; p < 6; p++) {
-                const row = rows[p + 1];
-                if (!row) continue;
-                
-                const printQty = Number(row[2]) || 0;
-                productSummary[p].qty = printQty;
-                productSummary[p].total = printQty * prices[p];
+            for (let r = 1; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row || !row[0]) continue;
+                const prodNameRaw = String(row[0]).trim();
+                if (prodNameRaw === '合計' || prodNameRaw === '總計' || prodNameRaw.includes('請款') || prodNameRaw === '稅額') continue;
+
+                const price = cleanNumber(row[3]);
+                let rowTotalQty = 0;
+                let rowTotalRev = 0;
+
+                const formattedName = prodNameRaw
+                    .replace("圖框", " 圖框")
+                    .replace("貼紙", " 貼紙")
+                    .replace("A4", " A4 ")
+                    .replace(/\s+/g, ' ').trim();
+
+                const lowerFmt = formattedName.toLowerCase();
+                const isMazi = formattedName.includes('馬子狗') || lowerFmt.includes('mazi') || lowerFmt.includes('whipped');
 
                 for (let m = 0; m < 12; m++) {
                     const qtyCol = 4 + m * 2;
                     const revCol = 5 + m * 2;
-                    const q = Number(row[qtyCol]) || 0;
-                    const r = Number(row[revCol]) || 0;
+                    const q = cleanNumber(row[qtyCol]);
+                    const rev = cleanNumber(row[revCol]) || (q * price);
 
-                    monthlyTotalQty[m] += q;
-                    monthlyTotalRev[m] += r;
+                    monthlyQty[m] += q;
+                    monthlyTotal[m] += rev;
+                    if (isMazi) monthlyMazi[m] += rev;
+                    else monthlyLime[m] += rev;
 
-                    if (p < 3) monthlyLimeRev[m] += r;
-                    else monthlyMaziRev[m] += r;
+                    rowTotalQty += q;
+                    rowTotalRev += rev;
 
                     monthlyProducts[m].push({
-                        name: productSummary[p].name,
-                        price: prices[p],
+                        name: formattedName,
+                        price: price,
                         qty: q,
-                        total: r
+                        total: rev
                     });
                 }
+
+                const finalQty = rowTotalQty > 0 ? rowTotalQty : cleanNumber(row[2]);
+                const finalRev = rowTotalRev > 0 ? rowTotalRev : (finalQty * price);
+
+                products.push({
+                    name: formattedName,
+                    price: price,
+                    qty: finalQty,
+                    total: finalRev
+                });
             }
 
-            return { monthlyTotalRev, monthlyLimeRev, monthlyMaziRev, monthlyTotalQty, productSummary, monthlyProducts };
+            return {
+                totalRev: monthlyTotal.reduce((a, b) => a + b, 0),
+                totalQty: monthlyQty.reduce((a, b) => a + b, 0),
+                limeRev: monthlyLime.reduce((a, b) => a + b, 0),
+                maziRev: monthlyMazi.reduce((a, b) => a + b, 0),
+                monthlyTotal, monthlyLime, monthlyMazi, monthlyQty,
+                products, monthlyProducts
+            };
         }
 
-        function parseWorkbookData(workbook, fileName) {
-            const sheet2025 = workbook.Sheets['2025'];
-            const sheet2026 = workbook.Sheets['2026'];
-            if (!sheet2026) throw new Error("找不到 2026 工作表");
+        function parseIbonWorkbook(workbook, fileName, channelId) {
+            const sheetNames = workbook.SheetNames;
+            const targetObj = channelDatasets[channelId];
 
-            const p2025 = sheet2025 ? parseSheet(sheet2025) : null;
-            const p2026 = parseSheet(sheet2026);
+            const s2025 = workbook.Sheets['2025'];
+            const s2026 = workbook.Sheets['2026'] || (!s2025 ? workbook.Sheets[sheetNames[0]] : null);
 
-            // 註冊新的每月品項明細至 global store
-            if (p2025) {
-                for (let m = 0; m < 12; m++) {
-                    const key = `2025-${String(m + 1).padStart(2, '0')}`;
-                    monthlyDetailsStore[key] = p2025.monthlyProducts[m];
-                }
-            }
-            for (let m = 0; m < 12; m++) {
-                const key = `2026-${String(m + 1).padStart(2, '0')}`;
-                monthlyDetailsStore[key] = p2026.monthlyProducts[m];
-            }
-
-            let lastActiveMonth = 0;
-            for (let m = 11; m >= 0; m--) {
-                if (p2026.monthlyTotalRev[m] > 0 || p2026.monthlyTotalQty[m] > 0) {
-                    lastActiveMonth = m + 1;
-                    break;
+            if (s2025) {
+                const parsed25 = parseSingleIbonSheet(s2025);
+                if (parsed25) {
+                    targetObj.years['2025'] = parsed25;
+                    for (let m = 0; m < 12; m++) {
+                        targetObj.monthlyDetails[`2025-${String(m + 1).padStart(2, '0')}`] = parsed25.monthlyProducts[m];
+                    }
                 }
             }
 
-            const rev2026 = p2026.monthlyTotalRev.reduce((a, b) => a + b, 0);
-            const qty2026 = p2026.monthlyTotalQty.reduce((a, b) => a + b, 0);
-            const lime2026 = p2026.monthlyLimeRev.reduce((a, b) => a + b, 0);
-            const mazi2026 = p2026.monthlyMaziRev.reduce((a, b) => a + b, 0);
-
-            const momRows2026 = [];
-            for (let m = 0; m < lastActiveMonth; m++) {
-                const total = p2026.monthlyTotalRev[m];
-                const prev = m > 0 ? p2026.monthlyTotalRev[m - 1] : null;
-                const diff = prev !== null ? total - prev : null;
-                const pct = prev !== null && prev > 0 ? Number(((diff / prev) * 100).toFixed(1)) : null;
-                momRows2026.push({
-                    key: `2026-${String(m + 1).padStart(2, '0')}`,
-                    m: `${m + 1}月`,
-                    total: total,
-                    diff: diff,
-                    pct: pct,
-                    lime: p2026.monthlyLimeRev[m],
-                    mazi: p2026.monthlyMaziRev[m]
-                });
+            let lastMonth = 0;
+            if (s2026) {
+                const parsed26 = parseSingleIbonSheet(s2026);
+                if (parsed26) {
+                    targetObj.years['2026'] = parsed26;
+                    for (let m = 0; m < 12; m++) {
+                        targetObj.monthlyDetails[`2026-${String(m + 1).padStart(2, '0')}`] = parsed26.monthlyProducts[m];
+                        if (parsed26.monthlyTotal[m] > 0 || parsed26.monthlyQty[m] > 0) {
+                            lastMonth = m + 1;
+                        }
+                    }
+                }
             }
 
-            dataStore['2026'] = {
-                revenue: rev2026.toLocaleString(),
-                quantity: qty2026.toLocaleString(),
-                avg: qty2026 > 0 ? (rev2026 / qty2026).toFixed(1) : "0.0",
-                revLabel: "2026 年度累計",
-                topBrandPerc: rev2026 > 0 ? ((lime2026 / rev2026) * 100).toFixed(1) + "%" : "0.0%",
-                badge: "當前篩選：2026 年度",
-                datasets: [
-                    { label: '2026 總和', data: p2026.monthlyTotalRev, color: '#10b981', dash: [] },
-                    { label: '萊姆 2026', data: p2026.monthlyLimeRev, color: '#a78bfa', dash: [5, 5] },
-                    { label: '馬子狗 2026', data: p2026.monthlyMaziRev, color: '#34d399', dash: [5, 5] }
-                ],
-                brands: [lime2026, mazi2026],
-                momRows: momRows2026,
-                insights: `<p>已由 <strong>${fileName}</strong> 自動解析！最新資料涵蓋至 2026 年 ${lastActiveMonth} 月，年度累計營收達 NT$ ${rev2026.toLocaleString()}。</p>`,
-                table: p2026.productSummary.map(x => ({ name: x.name, price: x.price, qty: x.qty.toLocaleString(), total: x.total.toLocaleString() }))
-            };
+            targetObj.hasData = true;
+            targetObj.statusText = `已透過【${fileName}】更新至 2026 年 ${lastMonth || '最新'} 月`;
+            return `<div class="font-bold text-emerald-800">✅ IBON 報表匯入成功：【${fileName}】（已更新至 2026 年 ${lastMonth || '最新'} 月）</div>`;
+        }
 
-            const rev2025 = p2025 ? p2025.monthlyTotalRev.reduce((a, b) => a + b, 0) : 25790;
-            const qty2025 = p2025 ? p2025.monthlyTotalQty.reduce((a, b) => a + b, 0) : 548;
-            const lime2025 = p2025 ? p2025.monthlyLimeRev.reduce((a, b) => a + b, 0) : 25790;
-            const mazi2025 = p2025 ? p2025.monthlyMaziRev.reduce((a, b) => a + b, 0) : 0;
-
-            const revAll = rev2025 + rev2026;
-            const qtyAll = qty2025 + qty2026;
-            const limeAll = lime2025 + lime2026;
-            const maziAll = mazi2025 + mazi2026;
-
-            const momRowsAll = [
-                { key: "2025-10", m: "2025 10月", total: 8835, diff: null, pct: null, lime: 8835, mazi: 0 },
-                { key: "2025-11", m: "2025 11月", total: 10575, diff: 1740, pct: 19.7, lime: 10575, mazi: 0 },
-                { key: "2025-12", m: "2025 12月", total: 6380, diff: -4195, pct: -39.7, lime: 6380, mazi: 0 }
-            ];
-
-            let prevAllTotal = 6380;
-            for (let m = 0; m < lastActiveMonth; m++) {
-                const total = p2026.monthlyTotalRev[m];
-                const diff = total - prevAllTotal;
-                const pct = prevAllTotal > 0 ? Number(((diff / prevAllTotal) * 100).toFixed(1)) : 0;
-                momRowsAll.push({
-                    key: `2026-${String(m + 1).padStart(2, '0')}`,
-                    m: `2026 ${String(m + 1).padStart(2, '0')}月`,
-                    total: total,
-                    diff: diff,
-                    pct: pct,
-                    lime: p2026.monthlyLimeRev[m],
-                    mazi: p2026.monthlyMaziRev[m]
-                });
-                prevAllTotal = total;
-            }
-
-            const allProducts = p2026.productSummary.map((p, idx) => {
-                const p25Qty = idx === 0 ? 226 : (idx === 1 ? 322 : 0);
-                const totalQty = p.qty + p25Qty;
-                return {
-                    name: p.name,
-                    price: p.price,
-                    qty: totalQty.toLocaleString(),
-                    total: (totalQty * p.price).toLocaleString()
-                };
+        // ==========================================
+        //  6. 初始化與匯出 PDF / JPG
+        // ==========================================
+        function initCharts() {
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctxTrend, {
+                type: 'line',
+                data: { labels: months, datasets: [] },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 0 },
+                    plugins: { legend: { display: false } },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const monthNum = index + 1;
+                            const y = currentYear === '2025' ? '2025' : '2026';
+                            const key = `${y}-${String(monthNum).padStart(2, '0')}`;
+                            selectMonth(key, `${y}年 ${monthNum}月`);
+                        }
+                    },
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
             });
 
-            dataStore['all'] = {
-                revenue: revAll.toLocaleString(),
-                quantity: qtyAll.toLocaleString(),
-                avg: qtyAll > 0 ? (revAll / qtyAll).toFixed(1) : "0.0",
-                revLabel: "累計兩年總和",
-                topBrandPerc: revAll > 0 ? ((limeAll / revAll) * 100).toFixed(1) + "%" : "0.0%",
-                badge: "當前篩選：全部累計",
-                datasets: [
-                    { label: '2025 總和', data: p2025 ? p2025.monthlyTotalRev : [0,0,0,0,0,0,0,0,0,8835,10575,6380], color: '#6366f1', dash: [] },
-                    { label: '2026 總和', data: p2026.monthlyTotalRev, color: '#10b981', dash: [] },
-                    { label: '萊姆 (累計)', data: [11460,42060,7765,17755,15315,8075,8310,13650,8540,p2026.monthlyLimeRev[9] || 0,10575,6380], color: '#a78bfa', dash: [5, 5] },
-                    { label: '馬子狗 (累計)', data: p2026.monthlyMaziRev, color: '#34d399', dash: [5, 5] }
-                ],
-                brands: [limeAll, maziAll],
-                momRows: momRowsAll,
-                insights: `<p>自動載入成功！全期累計總銷售額達到 <strong class="text-indigo-600">NT$ ${revAll.toLocaleString()}</strong>，累計列印 ${qtyAll.toLocaleString()} 張。</p>`,
-                table: allProducts
-            };
-
-            document.getElementById('data-status-label').innerText = `最新狀態：已透過【${fileName}】動態更新至 2026 年 ${lastActiveMonth} 月`;
-            document.getElementById('sub-header-desc').innerText = `混合分析：年度趨勢 + IP 曲線 + MoM 明細 (動態來源: ${fileName})`;
-            
-            updateYear(currentYear);
+            const ctxBrand = document.getElementById('brandChart').getContext('2d');
+            brandChart = new Chart(ctxBrand, {
+                type: 'doughnut',
+                data: { labels: ['萊姆 (Lime)', '馬子狗 (Whipped Bro)'], datasets: [{ data: [], backgroundColor: ['#6366f1', '#10b981'], borderWidth: 0 }] },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 0 },
+                    cutout: '70%', 
+                    plugins: { legend: { display: false } } 
+                }
+            });
         }
 
-        // ==========================================
-        //  匯出 PDF 與 JPG 功能
-        // ==========================================
         async function exportToPDF() {
             const element = document.getElementById('export-target');
-            const opt = {
-                margin: 10,
-                filename: `sales_dashboard_${currentYear}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, backgroundColor: '#f1f5f9' },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-            };
-            
             try {
                 const { jsPDF } = window.jspdf;
-                const canvas = await html2canvas(element, opt.html2canvas);
+                const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#f1f5f9' });
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 
                 const pdf = new jsPDF('l', 'mm', 'a4');
@@ -895,7 +1598,7 @@
                     pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
                     heightLeft -= pageHeight;
                 }
-                pdf.save(`sales_dashboard_${currentYear}.pdf`);
+                pdf.save(`sales_dashboard_${currentChannel}_${currentYear}.pdf`);
             } catch (error) {
                 console.error("PDF 匯出失敗:", error);
             }
@@ -904,15 +1607,10 @@
         async function exportToJPG() {
             const element = document.getElementById('export-target');
             try {
-                const canvas = await html2canvas(element, {
-                    scale: 2, 
-                    useCORS: true,
-                    backgroundColor: '#f1f5f9'
-                });
-                
+                const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#f1f5f9' });
                 const imgData = canvas.toDataURL('image/jpeg', 0.9);
                 const link = document.createElement('a');
-                link.download = `sales_dashboard_${currentYear}.jpg`;
+                link.download = `sales_dashboard_${currentChannel}_${currentYear}.jpg`;
                 link.href = imgData;
                 link.click();
             } catch (error) {
@@ -922,7 +1620,8 @@
 
         window.onload = () => {
             initCharts();
-            updateYear('all');
+            renderChannelTabs();
+            refreshDashboard();
         };
     </script>
 </body>
