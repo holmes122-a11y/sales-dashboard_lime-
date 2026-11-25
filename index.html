@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>2025-2026 多通路銷售業績數據儀表板 (總覽 + IBON + SNAPSHOT)</title>
+    <title>2025-2026 多通路銷售業績數據儀表板 (唯讀檢視 / 管理者權限雙模式)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -33,36 +33,52 @@
             <div id="channel-tabs-container" class="flex flex-wrap items-center gap-2">
                 <!-- 由 JS 動態渲染通路頁籤，預留未來無限新增空間 -->
             </div>
-            <div class="flex items-center gap-2 text-xs text-slate-400 px-3">
-                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>多通路架構 v3：支援 IBON 月報表與 SNAPSHOT 總計數量/金額欄位對應匯入</span>
+            <div class="flex flex-wrap items-center gap-2.5 px-2">
+                <span id="role-status-badge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                    <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                    <span>唯讀檢視模式</span>
+                </span>
+                <button onclick="openAdminAuthModal()" id="btn-admin-unlock" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-indigo-700 hover:bg-indigo-50 border border-transparent hover:border-indigo-200 transition-all" title="切換至管理者權限以匯入報表或打包更新檔">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <span>管理者登入</span>
+                </button>
+                <button onclick="logoutAdminMode()" id="btn-admin-logout" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span>登出並切回唯讀</span>
+                </button>
             </div>
         </div>
         
         <!-- Controls & Header Panel -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div>
-                <div class="flex flex-wrap items-center gap-3">
-                    <h1 id="main-dashboard-title" class="text-2xl sm:text-3xl font-bold text-slate-800">銷售業績數據儀表板</h1>
+                <div class="flex items-center gap-3">
+                    <h1 id="main-dashboard-title" class="text-3xl font-bold text-slate-800">銷售業績數據儀表板</h1>
                     <span id="channel-pill" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">全通路總覽</span>
                 </div>
-                <p class="text-slate-500 text-sm mt-1" id="sub-header-desc">混合分析：各通路加總與對比 + 年度趨勢 + IP 曲線 + MoM 月增率明細</p>
+                <p class="text-slate-500 mt-1" id="sub-header-desc">混合分析：各通路加總與對比 + 年度趨勢 + IP 曲線 + MoM 月增率明細</p>
             </div>
             
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="flex flex-wrap items-center gap-4">
                 <!-- Year Select Tabs -->
                 <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                    <button onclick="updateYear('all')" id="btn-all" class="px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all active-tab">全部累計</button>
-                    <button onclick="updateYear('2025')" id="btn-2025" class="px-4 sm:px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2025 年度</button>
-                    <button onclick="updateYear('2026')" id="btn-2026" class="px-4 sm:px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2026 年度</button>
+                    <button onclick="updateYear('all')" id="btn-all" class="px-5 py-2 rounded-lg text-sm font-bold transition-all active-tab">全部累計</button>
+                    <button onclick="updateYear('2025')" id="btn-2025" class="px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2025 年度</button>
+                    <button onclick="updateYear('2026')" id="btn-2026" class="px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-white/50 transition-all">2026 年度</button>
                 </div>
 
-                <!-- File Upload Input (.xlsx, .xls, .csv) & Trigger Button -->
-                <input type="file" id="data-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
-                <button onclick="triggerFileUpload()" id="btn-upload-data" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-amber-100">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                    <span id="upload-btn-text">匯入 Excel / CSV</span>
-                </button>
+                <!-- Admin-Only Toolbar (唯讀模式自動隱藏，管理者登入後顯示) -->
+                <div id="admin-toolbar" class="hidden flex flex-wrap items-center gap-2 bg-amber-50/80 p-1.5 rounded-xl border border-amber-200">
+                    <input type="file" id="data-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
+                    <button onclick="triggerFileUpload()" id="btn-upload-data" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        <span id="upload-btn-text">匯入 Excel / CSV</span>
+                    </button>
+                    <button onclick="exportUpdatedHTML()" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm" title="將目前匯入的最新數據寫入原始碼並下載新版 HTML（預設維持唯讀安全狀態）">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        <span>匯出最新 HTML 檔</span>
+                    </button>
+                </div>
 
                 <!-- Export Buttons Group -->
                 <div class="flex items-center gap-2">
@@ -90,8 +106,8 @@
             <!-- Status Header -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 id="export-title" class="text-xl sm:text-2xl font-bold text-slate-800">全通路銷售業績數據分析總表 (全部累計)</h2>
-                    <p class="text-slate-400 text-xs mt-1" id="data-status-label">資料狀態：IBON 已更新至 2026 年 10 月 (11510 期) ｜ SNAPSHOT 待匯入資料</p>
+                    <h2 id="export-title" class="text-2xl font-bold text-slate-800">全通路銷售業績數據分析總表 (全部累計)</h2>
+                    <p class="text-slate-400 text-xs mt-1" id="data-status-label">資料狀態：IBON 已更新至 2026 年 10 月 (11510 期) ｜ SNAPSHOT 已更新至 2026 年 10 月</p>
                 </div>
                 <div class="px-4 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold rounded-lg text-sm" id="badge-year">
                     當前篩選：全部累計
@@ -99,7 +115,7 @@
             </div>
 
             <!-- KPI Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="glass-card p-6 rounded-2xl shadow-sm border-t-4 border-indigo-500">
                     <p class="text-slate-500 text-sm font-medium" id="kpi-rev-title">銷售總額</p>
                     <h3 id="kpi-revenue" class="text-3xl font-bold text-slate-800 mt-2">NT$ 224,645</h3>
@@ -154,7 +170,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Monthly Trend Line Chart -->
                 <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-sm">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+                    <div class="flex items-center justify-between mb-6">
                         <div>
                             <h3 class="text-lg font-bold text-slate-800">銷售趨勢分析 (金額曲線)</h3>
                             <span class="text-xs text-slate-400">💡 提示：點擊折線上的月份節點，可直接下鑽該月品項明細</span>
@@ -162,7 +178,7 @@
                         <div id="chart-legend-custom" class="flex flex-wrap gap-3 text-[10px] font-bold">
                         </div>
                     </div>
-                    <div class="h-80 relative w-full">
+                    <div class="h-80">
                         <canvas id="trendChart"></canvas>
                     </div>
                 </div>
@@ -171,7 +187,7 @@
                 <div class="glass-card p-6 rounded-2xl shadow-sm flex flex-col">
                     <h3 class="text-lg font-bold text-slate-800 mb-6">品牌營收比例</h3>
                     <div class="flex-grow flex items-center justify-center">
-                        <div class="w-full h-64 relative">
+                        <div class="w-full h-64">
                             <canvas id="brandChart"></canvas>
                         </div>
                     </div>
@@ -184,7 +200,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- MoM Table -->
                 <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-sm overflow-hidden">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                    <div class="flex justify-between items-center mb-4">
                         <div>
                             <h3 class="text-lg font-bold text-slate-800">月度銷售金額與 MoM 增減明細表</h3>
                             <span class="text-xs text-indigo-600 font-medium">👉 點選任意月份列，下方將即時顯示該月份銷售品項</span>
@@ -311,7 +327,7 @@
             </div>
 
             <!-- 試算總計預覽卡 -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div class="grid grid-cols-3 gap-3 mb-4">
                 <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3">
                     <div class="text-[11px] text-indigo-600 font-bold">預覽抓取：總計數量</div>
                     <div class="text-xl font-bold text-slate-800 mt-0.5" id="preview-snap-qty">0 張</div>
@@ -350,6 +366,31 @@
                 <button onclick="commitSnapshotMapping()" class="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
                     確認並匯入 SNAPSHOT 數據
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal: 管理者權限登入驗證視窗 -->
+    <div id="admin-auth-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </span>
+                    <span>切換至管理者權限</span>
+                </h3>
+                <button onclick="closeAdminAuthModal()" class="text-slate-400 hover:text-slate-600 font-bold text-sm px-2 py-1">✕</button>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">輸入管理密碼後，即可開啟「匯入 Excel / CSV」與「匯出最新 HTML 檔」功能。一般同仁未登入時預設為唯讀檢視模式。</p>
+            <div class="mt-4">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">管理員密碼</label>
+                <input type="password" id="admin-password-input" placeholder="請輸入管理密碼 (預設: admin2026)" onkeydown="if(event.key==='Enter') verifyAdminPassword()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
+                <p id="admin-auth-error" class="hidden text-xs text-rose-600 font-bold mt-1.5">密碼錯誤，請重新輸入！</p>
+            </div>
+            <div class="flex justify-end gap-2 mt-5">
+                <button onclick="closeAdminAuthModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">取消</button>
+                <button onclick="verifyAdminPassword()" class="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">驗證並啟用管理者</button>
             </div>
         </div>
     </div>
@@ -398,6 +439,7 @@
         // ==========================================
         //  2. 各通路原始數據庫 (IBON 為 11510 精確驗證數據)
         // ==========================================
+        /* === CHANNEL_DATASETS_START === */
         const channelDatasets = {
             ibon: {
                 statusText: "已更新至 2026 年 10 月 (11510 期)",
@@ -538,15 +580,15 @@
                 }
             },
             snapshot: {
-                statusText: "已更新至 2026 年 10 月（含 8/10-9/30 及 10/1-10/30 萊姆＆馬子狗分品牌明細）",
+                statusText: "已更新至 2026 年 10 月（含 8/10-9/30 與 10/1-10/30 萊姆＆馬子狗明細）",
                 hasData: true,
                 years: {
                     '2025': {
                         totalRev: 0, totalQty: 0, limeRev: 0, maziRev: 0,
                         monthlyTotal: new Array(12).fill(0),
-                        monthlyLime:  new Array(12).fill(0),
-                        monthlyMazi:  new Array(12).fill(0),
-                        monthlyQty:   new Array(12).fill(0),
+                        monthlyLime: new Array(12).fill(0),
+                        monthlyMazi: new Array(12).fill(0),
+                        monthlyQty: new Array(12).fill(0),
                         products: []
                     },
                     '2026': {
@@ -556,25 +598,25 @@
                         monthlyMazi:  [0, 0, 0, 0, 0, 0, 0, 0, 1900, 6925, 0, 0],
                         monthlyQty:   [0, 0, 0, 0, 0, 0, 0, 0, 42, 54, 0, 0],
                         products: [
-                            { name: "SnapShot 妞拍貼 - 馬子狗 (10/1~10/30)", price: 165, qty: 42, total: 6925 },
-                            { name: "SnapShot 妞拍貼 - 萊姆 (8/10~9/30)", price: 123, qty: 28, total: 3450 },
-                            { name: "SnapShot 妞拍貼 - 萊姆 (10/1~10/30)", price: 185, qty: 12, total: 2225 },
-                            { name: "SnapShot 妞拍貼 - 馬子狗 (8/10~9/30)", price: 136, qty: 14, total: 1900 }
+                            { name: "馬子狗 妞拍貼 (SnapShot)", price: 158, qty: 56, total: 8825 },
+                            { name: "萊姆 妞拍貼 (SnapShot)", price: 142, qty: 40, total: 5675 }
                         ]
                     }
                 },
                 monthlyDetails: {
                     "2026-09": [
-                        { name: "SnapShot 妞拍貼 - 萊姆 (8/10-9/30)", price: 123, qty: 28, total: 3450 },
-                        { name: "SnapShot 妞拍貼 - 馬子狗 (8/10-9/30)", price: 136, qty: 14, total: 1900 }
+                        { name: "萊姆 妞拍貼 (8/10 - 9/30)", price: 123, qty: 28, total: 3450 },
+                        { name: "馬子狗 妞拍貼 (8/10 - 9/30)", price: 136, qty: 14, total: 1900 }
                     ],
                     "2026-10": [
-                        { name: "SnapShot 妞拍貼 - 馬子狗 (10/1~10/30)", price: 165, qty: 42, total: 6925 },
-                        { name: "SnapShot 妞拍貼 - 萊姆 (10/1~10/30)", price: 185, qty: 12, total: 2225 }
+                        { name: "馬子狗 妞拍貼 (10/1 ~ 10/30)", price: 165, qty: 42, total: 6925 },
+                        { name: "萊姆 妞拍貼 (10/1 ~ 10/30)", price: 185, qty: 12, total: 2225 }
                     ]
                 }
             }
         };
+
+        /* === CHANNEL_DATASETS_END === */
 
         // ==========================================
         //  3. 動態彙整引擎 (即時計算個別通路或全通路加總)
@@ -749,7 +791,9 @@
 
             let insightsHtml = '';
             if (totalRev === 0) {
-                insightsHtml = `<p class="text-slate-400">目前此通路尚無銷售數據，請點擊右上角 <strong>「匯入 Excel / CSV」</strong> 上傳報表檔案。</p>`;
+                insightsHtml = isAdminMode
+                    ? `<p class="text-slate-400">目前此通路尚無銷售數據，請點擊上方管理者工具列的 <strong>「匯入 Excel / CSV」</strong> 上傳報表檔案。</p>`
+                    : `<p class="text-slate-400">目前此通路尚無銷售數據（唯讀檢視模式）。</p>`;
             } else {
                 const latestRow = momRows[momRows.length - 1];
                 const momBadge = latestRow && latestRow.pct !== null
@@ -907,8 +951,8 @@
             brandChart.update();
 
             document.getElementById('brand-legend').innerHTML = `
-                <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-indigo-500 rounded-full"></span> 萊姆 (Lime)</span><span class="font-bold">NT$ ${viewData.limeRev.toLocaleString()}</span></div>
-                <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-emerald-500 rounded-full"></span> 馬子狗 (Whipped Bro)</span><span class="font-bold">NT$ ${viewData.maziRev.toLocaleString()}</span></div>
+                <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-indigo-500 rounded-full"></span> 萊姆系列</span><span class="font-bold">NT$ ${viewData.limeRev.toLocaleString()}</span></div>
+                <div class="flex justify-between text-sm"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-emerald-500 rounded-full"></span> 馬子狗系列</span><span class="font-bold">NT$ ${viewData.maziRev.toLocaleString()}</span></div>
             `;
 
             renderMoMTable(viewData.momRows);
@@ -1091,8 +1135,155 @@
         let pendingWorkbook = null;
         let pendingFileName = '';
 
+        // ==========================================
+        //  唯讀 / 管理者權限控管與一鍵打包最新 HTML
+        // ==========================================
+        const ADMIN_PASSCODE = 'admin2026';
+        let isAdminMode = false;
+
+        function initRolePermission() {
+            const params = new URLSearchParams(window.location.search);
+            const hasAdminParam = params.get('mode') === 'admin' || params.get('admin') === '1';
+            const savedSession = sessionStorage.getItem('dashboard_is_admin') === 'true';
+
+            if (savedSession) {
+                setAdminMode(true, false);
+            } else {
+                setAdminMode(false, false);
+                if (hasAdminParam) {
+                    openAdminAuthModal();
+                }
+            }
+        }
+
+        function setAdminMode(enabled, notify = true) {
+            isAdminMode = enabled;
+            const toolbar = document.getElementById('admin-toolbar');
+            const badge = document.getElementById('role-status-badge');
+            const unlockBtn = document.getElementById('btn-admin-unlock');
+            const logoutBtn = document.getElementById('btn-admin-logout');
+
+            if (enabled) {
+                sessionStorage.setItem('dashboard_is_admin', 'true');
+                if (toolbar) toolbar.classList.remove('hidden');
+                if (unlockBtn) unlockBtn.classList.add('hidden');
+                if (logoutBtn) logoutBtn.classList.remove('hidden');
+                if (badge) {
+                    badge.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300";
+                    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span><span>管理者編輯模式</span>`;
+                }
+                if (notify) {
+                    showBanner(`<div class="font-bold text-emerald-800">🔓 已切換至「管理者權限」</div><div>您現在可以匯入 IBON / SNAPSHOT 報表，完成後點擊「匯出最新 HTML 檔」即可發布給同仁唯讀檢視。</div>`, false);
+                }
+            } else {
+                sessionStorage.removeItem('dashboard_is_admin');
+                if (toolbar) toolbar.classList.add('hidden');
+                if (unlockBtn) unlockBtn.classList.remove('hidden');
+                if (logoutBtn) logoutBtn.classList.add('hidden');
+                if (badge) {
+                    badge.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200";
+                    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span><span>唯讀檢視模式</span>`;
+                }
+                if (notify) {
+                    showBanner(`<div class="font-bold text-slate-700">🔒 已登出並切換回「唯讀檢視模式」</div>`, false);
+                }
+            }
+            refreshDashboard();
+        }
+
+        function openAdminAuthModal() {
+            const modal = document.getElementById('admin-auth-modal');
+            const input = document.getElementById('admin-password-input');
+            const err = document.getElementById('admin-auth-error');
+            if (err) err.classList.add('hidden');
+            if (input) input.value = '';
+            if (modal) {
+                modal.classList.remove('hidden');
+                setTimeout(() => input && input.focus(), 50);
+            }
+        }
+
+        function closeAdminAuthModal() {
+            const modal = document.getElementById('admin-auth-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function verifyAdminPassword() {
+            const input = document.getElementById('admin-password-input');
+            const err = document.getElementById('admin-auth-error');
+            if (!input) return;
+            if (input.value === ADMIN_PASSCODE) {
+                closeAdminAuthModal();
+                setAdminMode(true, true);
+            } else {
+                if (err) err.classList.remove('hidden');
+                input.select();
+            }
+        }
+
+        function logoutAdminMode() {
+            setAdminMode(false, true);
+        }
+
         function triggerFileUpload() {
+            if (!isAdminMode) {
+                openAdminAuthModal();
+                return;
+            }
             document.getElementById('data-file-input').click();
+        }
+
+        // 一鍵打包下載包含最新 channelDatasets 的完整獨立 HTML（給一般使用者開啟時自動保持唯讀狀態）
+        function exportUpdatedHTML() {
+            if (!isAdminMode) return;
+            try {
+                // 取得乾淨的原始 HTML 結構（重新抓取當前頁面或基於原始模板重建）
+                let rawDoc = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+                // 1. 確保匯出的檔案預設處於「唯讀檢視模式」（隱藏管理者工具列與彈窗）
+                rawDoc = rawDoc.replace(
+                    /(<div id="admin-toolbar" class=")(.*?)(">)/,
+                    '$1hidden flex flex-wrap items-center gap-2 bg-amber-50/80 p-1.5 rounded-xl border border-amber-200$3'
+                );
+                rawDoc = rawDoc.replace(
+                    /(<button onclick="openAdminAuthModal\(\)" id="btn-admin-unlock" class=")(.*?)(">)/,
+                    '$1inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-indigo-700 hover:bg-indigo-50 border border-transparent hover:border-indigo-200 transition-all$3'
+                );
+                rawDoc = rawDoc.replace(
+                    /(<button onclick="logoutAdminMode\(\)" id="btn-admin-logout" class=")(.*?)(">)/,
+                    '$1hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all$3'
+                );
+                rawDoc = rawDoc.replace(
+                    /(<div id="import-banner" class=")(.*?)(">)/,
+                    '$1hidden mb-6 bg-emerald-50 border border-emerald-200 text-emerald-900 p-4 rounded-2xl shadow-sm flex items-start justify-between gap-4$3'
+                );
+
+                // 2. 將最新的 channelDatasets 寫入原始碼標記區間
+                const startMarker = '/* === CHANNEL_DATASETS_START === */';
+                const endMarker = '/* === CHANNEL_DATASETS_END === */';
+                const sIdx = rawDoc.indexOf(startMarker);
+                const eIdx = rawDoc.indexOf(endMarker);
+
+                if (sIdx !== -1 && eIdx !== -1) {
+                    const serializedData = JSON.stringify(channelDatasets, null, 12);
+                    const replacement = `${startMarker}\n        const channelDatasets = ${serializedData};\n        `;
+                    rawDoc = rawDoc.substring(0, sIdx) + replacement + rawDoc.substring(eIdx);
+                }
+
+                const blob = new Blob([rawDoc], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                a.href = url;
+                a.download = `sales_dashboard_${todayStr}.html`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                showBanner(`<div class="font-bold text-emerald-800">📦 已成功匯出最新版儀表板 HTML 檔案！</div><div>您可以直接將此檔案貼入 <strong>Google Sites 內嵌程式碼</strong>（或上傳至網站空間），一般同仁開啟時將預設為<strong>「唯讀檢視模式」</strong>。</div>`, false);
+            } catch (err) {
+                console.error("匯出 HTML 失敗:", err);
+                showBanner(`❌ 匯出 HTML 失敗：${err.message}`, true);
+            }
         }
 
         function cleanNumber(val) {
@@ -1170,6 +1361,7 @@
             const sheetSelect = document.getElementById('map-sheet');
             sheetSelect.innerHTML = workbook.SheetNames.map((s, idx) => `<option value="${idx}">${s}</option>`).join('');
 
+            // 依檔名猜測預設年月
             const fnMatch = fileName.match(/115(\d{2})|2026[-_.]?(\d{1,2})|(\d{1,2})月/);
             if (fnMatch) {
                 const mVal = parseInt(fnMatch[1] || fnMatch[2] || fnMatch[3], 10);
@@ -1198,6 +1390,7 @@
             const sheet = pendingWorkbook.Sheets[sheetName];
             const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
+            // 填充標題所在列下拉選單 (第 1 列 ~ 第 15 列)
             const headerRowSelect = document.getElementById('map-header-row');
             const maxScan = Math.min(rows.length, 15);
             let detectedHeaderIdx = 0;
@@ -1213,6 +1406,7 @@
                 }
             }
 
+            // 檢查多層合併標題（若下一列出現「數量 / 金額」子標題）
             if (detectedHeaderIdx + 1 < rows.length) {
                 const nextRowStr = rows[detectedHeaderIdx + 1].map(c => String(c || '').trim());
                 if (nextRowStr.some(c => c === '數量' || c === '金額' || c === '總計數量' || c === '總計金額')) {
@@ -1263,6 +1457,7 @@
                 }
             }
 
+            // 階段二備援：若標題未明確標註，抓最右側兩個數值欄位
             if (bestQtyCol === -1 && maxCols >= 2) bestQtyCol = maxCols - 2;
             if (bestRevCol === -1 && maxCols >= 1) bestRevCol = maxCols - 1;
 
@@ -1324,6 +1519,7 @@
                 }
             }
 
+            // 若明細列無數值但有「總計/合計」列，則直接採用總計列
             if (items.length === 0 && (summaryRowQty > 0 || summaryRowRev > 0)) {
                 const q = summaryRowQty || 0;
                 const rev = summaryRowRev || 0;
@@ -1346,6 +1542,7 @@
             document.getElementById('preview-snap-qty').innerText = `${parsed.totalQty.toLocaleString()} 張`;
             document.getElementById('preview-snap-rev').innerText = `NT$ ${parsed.totalRev.toLocaleString()}`;
 
+            // 渲染預覽表格
             const thead = document.getElementById('mapper-preview-thead');
             const tbody = document.getElementById('mapper-preview-tbody');
             const maxCols = parsed.rows.reduce((m, r) => Math.max(m, r.length), 0);
@@ -1385,14 +1582,14 @@
             const targetYear = document.getElementById('map-target-year').value;
             const targetMonthIdx = parseInt(document.getElementById('map-target-month').value, 10);
 
+            // 重設並寫入 SNAPSHOT 數據庫
             channelDatasets['snapshot'] = createEmptyChannelData("SNAPSHOT");
             const snapObj = channelDatasets['snapshot'];
             const yTarget = snapObj.years[targetYear];
 
             let limeRev = 0, maziRev = 0;
             parsed.items.forEach(item => {
-                const lowerName = item.name.toLowerCase();
-                const isMazi = item.name.includes('馬子狗') || lowerName.includes('mazi') || lowerName.includes('whipped');
+                const isMazi = item.name.includes('馬子狗') || item.name.toLowerCase().includes('mazi') || item.name.toLowerCase().includes('whipped');
                 if (isMazi) maziRev += item.total;
                 else limeRev += item.total;
             });
@@ -1450,8 +1647,7 @@
                     .replace("A4", " A4 ")
                     .replace(/\s+/g, ' ').trim();
 
-                const lowerFmt = formattedName.toLowerCase();
-                const isMazi = formattedName.includes('馬子狗') || lowerFmt.includes('mazi') || lowerFmt.includes('whipped');
+                const isMazi = formattedName.includes('馬子狗') || formattedName.toLowerCase().includes('whipped');
 
                 for (let m = 0; m < 12; m++) {
                     const qtyCol = 4 + m * 2;
@@ -1564,7 +1760,7 @@
             const ctxBrand = document.getElementById('brandChart').getContext('2d');
             brandChart = new Chart(ctxBrand, {
                 type: 'doughnut',
-                data: { labels: ['萊姆 (Lime)', '馬子狗 (Whipped Bro)'], datasets: [{ data: [], backgroundColor: ['#6366f1', '#10b981'], borderWidth: 0 }] },
+                data: { labels: ['萊姆系列', '馬子狗系列'], datasets: [{ data: [], backgroundColor: ['#6366f1', '#10b981'], borderWidth: 0 }] },
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false, 
@@ -1621,7 +1817,7 @@
         window.onload = () => {
             initCharts();
             renderChannelTabs();
-            refreshDashboard();
+            initRolePermission();
         };
     </script>
 </body>
